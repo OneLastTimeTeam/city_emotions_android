@@ -10,21 +10,19 @@ import com.example.cityemotions.usecases.UseCaseHandler
 import com.google.android.gms.maps.model.LatLng
 
 
-class MapScreenViewModel(val getMarkers: GetMarkers,
-                         val addMarker: AddMarker,
-                         val useCaseHandler: UseCaseHandler
+class MapScreenViewModel(private val getMarkers: GetMarkers,
+                         private val addMarker: AddMarker,
+                         private val useCaseHandler: UseCaseHandler
 ): ViewModel() {
     fun getMarkers(position: LatLng, callback: DataSource.LoadCallback) {
         val requestValue = GetMarkers.RequestValue(position)
         useCaseHandler.execute(getMarkers, requestValue, object :
             UseCase.UseCaseCallback<GetMarkers.ResponseValue> {
             override fun onSuccess(response: GetMarkers.ResponseValue) {
-                // TODO: callback здесь - отрисовка полученных маркеров
                 callback.onLoad(response.markers)
             }
 
             override fun onError(t: Throwable) {
-                // TODO: логирование или обработка ошибок в колбэке
                 callback.onError(t)
             }
         })

@@ -1,13 +1,12 @@
 package com.example.cityemotions.datasources
 
-import androidx.lifecycle.MutableLiveData
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLng
 
 
 interface DataSource {
     interface LoadCallback {
-        fun onLoad(markers: MutableLiveData<MarkerModel>)
+        fun onLoad(markers: MutableList<MarkerModel>)
         fun onError(t: Throwable)
     }
 
