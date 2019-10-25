@@ -1,6 +1,5 @@
 package com.example.cityemotions.usecases
 
-import androidx.lifecycle.MutableLiveData
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.DataSource
 import com.example.cityemotions.datasources.MarkerDataSource
@@ -17,7 +16,7 @@ class GetMarkers(private val dataRepository: MarkerDataSource):
         if (requestValue != null) {
             dataRepository.getMarkers(requestValue.position, object :
                 DataSource.LoadCallback {
-                override fun onLoad(markers: MutableLiveData<MarkerModel>) {
+                override fun onLoad(markers: MutableList<MarkerModel>) {
                     val responseValue =
                         ResponseValue(markers)
                     useCaseCallback?.onSuccess(responseValue)
@@ -31,5 +30,5 @@ class GetMarkers(private val dataRepository: MarkerDataSource):
     }
 
     class RequestValue(val position: LatLng): UseCase.RequestValue
-    class ResponseValue(val markers: MutableLiveData<MarkerModel>): UseCase.ResponseValue
+    class ResponseValue(val markers: MutableList<MarkerModel>): UseCase.ResponseValue
 }

@@ -1,6 +1,5 @@
 package com.example.cityemotions.datasources
 
-import androidx.lifecycle.MutableLiveData
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLng
 
@@ -16,14 +15,19 @@ class MarkerDataSource : DataSource {
             return instance!!
         }
     }
-    private var data: MutableLiveData<MarkerModel> = MutableLiveData()
+    private var data: MutableList<MarkerModel> = mutableListOf()
+    init {
+        data.add(MarkerModel(10.0, 10.0))
+        data.add(MarkerModel(20.0, 20.0))
+        data.add(MarkerModel(30.0, 30.0))
+    }
 
     override fun getMarkers(position: LatLng, callback: DataSource.LoadCallback) {
-        // TODO: тут достаются нужные маркеры в data из базы
+        callback.onLoad(data)
     }
 
     override fun addMarker(marker: MarkerModel, callback: DataSource.AddCallback) {
-        // TODO: тут должна закидываться новая метка в базу
-        data.postValue(marker)
+        data.add(marker)
+        callback.onAdd()
     }
 }
