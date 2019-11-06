@@ -5,27 +5,33 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.MutableLiveData
 import com.example.cityemotions.Injector
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.DataSource
-import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.MapScreenViewModel
 import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 
 
 class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
@@ -39,6 +45,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     private lateinit var map: GoogleMap
+    private lateinit var placesClient: PlacesClient
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
 
@@ -50,11 +57,16 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Places.initialize(activity as Context, getString(R.string.google_maps_key))
+        placesClient = Places.createClient(activity as Context)
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
 
         locationCallback = object : LocationCallback() {
+            // TODO: не стоит делать это тут(реально не стоит, это вызывается очень часто)
             override fun onLocationResult(result: LocationResult?) {
                 super.onLocationResult(result)
                 if (result != null) {
@@ -90,6 +102,29 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.google_map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        val searchBar = childFragmentManager.findFragmentById(R.id.search_bar)
+                as AutocompleteSupportFragment
+        searchBar.setPlaceFields(arrayListOf(Place.Field.ID, Place.Field.NAME))
+        searchBar.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                val geocoder = Geocoder(activity as Context)
+                val locationList = geocoder.getFromLocationName(place.name, 1)
+
+                if (locationList != null && locationList.size != 0) {
+                    val location = locationList[0]
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    map.addMarker(MarkerOptions().position(latLng).title(place.name))
+                    map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+                }
+            }
+
+            override fun onError(status: Status) {
+                if (status.statusMessage != null) {
+                    Log.e("PlaceSelection", status.statusMessage as String)
+                }
+            }
+        })
     }
 
     private fun setupMapLocation() {
