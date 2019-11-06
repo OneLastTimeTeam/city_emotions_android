@@ -39,11 +39,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val REQUEST_CHECK_SETTINGS = 2
+
+        // Пока будем апдейтить позицию и метки на экране только если локейшн передвинулся на >3 метра
+        private const val minUpdateDistance = 3.0
     }
 
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation: Location
+    private var lastLocation: Location? = null
 
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
@@ -57,25 +60,40 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
-
         locationCallback = object : LocationCallback() {
-            // TODO: не стоит делать это тут(реально не стоит, это вызывается очень часто)
+            private fun positionChanged(newLocation: Location): Boolean {
+                if (lastLocation == null) {
+                    return true
+                }
+
+                val distance = lastLocation?.distanceTo(newLocation) as Float
+                return distance > minUpdateDistance
+            }
+
             override fun onLocationResult(result: LocationResult?) {
                 super.onLocationResult(result)
-                if (result != null) {
-                    lastLocation = result.lastLocation
-                    mapScreenViewModel.getMarkers(LatLng(lastLocation.latitude, lastLocation.longitude),
-                        object : DataSource.LoadCallback {
+                if (result != null && result.lastLocation != null) {
+                    if (positionChanged(result.lastLocation)) {
+                        lastLocation = result.lastLocation
+                        mapScreenViewModel.getMarkers(LatLng(
+                            result.lastLocation.latitude,
+                            result.lastLocation.longitude
+                        ), object : DataSource.LoadCallback {
                             override fun onLoad(markers: MutableList<MarkerModel>) {
                                 // TODO: reimplement title, image etc.
-                                markers.forEach { setMarkerOnMap(LatLng(it.latitude, it.longtitude),
-                                    "Default Title") }
+                                markers.forEach {
+                                    setMarkerOnMap(
+                                        LatLng(it.latitude, it.longtitude),
+                                        "Default Title"
+                                    )
+                                }
                             }
 
                             override fun onError(t: Throwable) {
                                 Log.e("LoadCallback", null, t)
                             }
                         })
+                    }
                 }
             }
         }
