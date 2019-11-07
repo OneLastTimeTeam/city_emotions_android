@@ -30,7 +30,8 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 
 
-class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
+class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
+    PlaceSelectionListener {
     companion object {
         fun getInstance(): MapScreenFragment {
             return MapScreenFragment()
@@ -46,6 +47,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var lastLocation: Location? = null
+    private lateinit var geocoder: Geocoder
 
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
@@ -58,8 +60,11 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         Places.initialize(activity as Context, getString(R.string.google_maps_key))
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
+        geocoder = Geocoder(activity as Context)
+
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
+
         locationCallback = object : LocationCallback() {
             private fun positionChanged(newLocation: Location): Boolean {
                 if (lastLocation == null) {
@@ -88,6 +93,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        setupLocationRequest()
         startLocationUpdates()
         return inflater.inflate(R.layout.map_screen, container, false)
     }
@@ -101,26 +107,57 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         val searchBar = childFragmentManager.findFragmentById(R.id.search_bar)
                 as AutocompleteSupportFragment
         searchBar.setPlaceFields(arrayListOf(Place.Field.ID, Place.Field.NAME))
-        searchBar.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-            override fun onPlaceSelected(place: Place) {
-                val geocoder = Geocoder(activity as Context)
-                val locationList = geocoder.getFromLocationName(place.name, 1)
+        searchBar.setOnPlaceSelectedListener(this)
+    }
 
-                if (locationList != null && locationList.size != 0) {
-                    val location = locationList[0]
-                    val latLng = LatLng(location.latitude, location.longitude)
-                    fetchMarkers(latLng)
-                    map.addMarker(MarkerOptions().position(latLng).title(place.name))
-                    map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-                }
-            }
+    override fun onPlaceSelected(place: Place) {
+        val locationList = geocoder.getFromLocationName(place.name, 1)
 
-            override fun onError(status: Status) {
-                if (status.statusMessage != null) {
-                    Log.e("PlaceSelection", status.statusMessage as String)
-                }
+        if (locationList != null && locationList.size != 0) {
+            val location = locationList[0]
+            val latLng = LatLng(location.latitude, location.longitude)
+            fetchMarkers(latLng)
+            map.addMarker(MarkerOptions().position(latLng).title(place.name))
+            map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+        }
+    }
+
+    override fun onError(status: Status) {
+        if (status.statusMessage != null) {
+            Log.e("PlaceSelection", status.statusMessage as String)
+        }
+    }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        map = googleMap
+        map.uiSettings.isZoomControlsEnabled = true
+        map.setOnMarkerClickListener(this)
+        setupMapLocation()
+        setupLocationUpdates()
+    }
+
+    override fun onMarkerClick(marker: Marker?) = false
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == Activity.RESULT_OK) {
+                locationUpdateState = true
+                setupLocationUpdates()
             }
-        })
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!locationUpdateState) {
+            setupLocationUpdates()
+        }
     }
 
     private fun setupMapLocation() {
@@ -148,6 +185,36 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
+    private fun setupLocationRequest() {
+        locationRequest = LocationRequest()
+        locationRequest.interval = 10000
+        locationRequest.fastestInterval = 5000
+
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+    }
+
+    private fun startLocationUpdates() {
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+            .build()
+
+        val client = LocationServices.getSettingsClient(activity as Activity)
+        val task = client.checkLocationSettings(builder)
+
+        task.addOnSuccessListener {
+            locationUpdateState = true
+            setupLocationUpdates()
+        }
+        task.addOnFailureListener { e ->
+            if (e is ResolvableApiException) {
+                try {
+                    e.startResolutionForResult(activity as Activity,
+                        REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {}
+            }
+        }
+    }
+
     private fun setupLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 activity as Activity,
@@ -162,41 +229,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
 
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
-    }
-
-    override fun onMapReady(googleMap: GoogleMap) {
-        map = googleMap
-        map.uiSettings.isZoomControlsEnabled = true
-        map.setOnMarkerClickListener(this)
-        setupMapLocation()
-        setupLocationUpdates()
-    }
-
-    private fun startLocationUpdates() {
-        locationRequest = LocationRequest()
-        locationRequest.interval = 10000
-        locationRequest.fastestInterval = 5000
-
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-
-        val builder = LocationSettingsRequest.Builder()
-            .addLocationRequest(locationRequest)
-
-        val client = LocationServices.getSettingsClient(activity as Activity)
-        val task = client.checkLocationSettings(builder.build())
-
-        task.addOnSuccessListener {
-            locationUpdateState = true
-            setupLocationUpdates()
-        }
-        task.addOnFailureListener { e ->
-            if (e is ResolvableApiException) {
-                try {
-                    e.startResolutionForResult(activity as Activity,
-                        REQUEST_CHECK_SETTINGS)
-                } catch (sendEx: IntentSender.SendIntentException) {}
-            }
-        }
     }
 
     private fun fetchMarkers(position: LatLng) {
@@ -223,29 +255,5 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         options.title(title)
             .icon(BitmapDescriptorFactory.fromResource(marker.emotion.resId))
         map.addMarker(options)
-    }
-
-    override fun onMarkerClick(marker: Marker?) = false
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CHECK_SETTINGS) {
-            if (resultCode == Activity.RESULT_OK) {
-                locationUpdateState = true
-                setupLocationUpdates()
-            }
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (!locationUpdateState) {
-            setupLocationUpdates()
-        }
     }
 }
