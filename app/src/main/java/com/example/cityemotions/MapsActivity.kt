@@ -3,9 +3,15 @@ package com.example.cityemotions
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.cityemotions.fragments.MapScreenFragment
+import com.example.cityemotions.fragments.ProfileFragment
 
 
-class MapsActivity : AppCompatActivity() {
+interface OnSelectProfile {
+    fun onProfileSelected()
+}
+
+
+class MapsActivity : AppCompatActivity(), OnSelectProfile {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -15,5 +21,12 @@ class MapsActivity : AppCompatActivity() {
                 .replace(R.id.fragment_container, MapScreenFragment())
                 .commit()
         }
+    }
+
+    override fun onProfileSelected() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, ProfileFragment())
+            .addToBackStack(null)
+            .commit()
     }
 }
