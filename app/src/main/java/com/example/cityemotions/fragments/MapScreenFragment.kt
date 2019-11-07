@@ -23,9 +23,7 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
@@ -77,24 +75,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 if (result != null && result.lastLocation != null) {
                     if (positionChanged(result.lastLocation)) {
                         lastLocation = result.lastLocation
-                        mapScreenViewModel.getMarkers(LatLng(
-                            result.lastLocation.latitude,
-                            result.lastLocation.longitude
-                        ), object : DataSource.LoadCallback {
-                            override fun onLoad(markers: MutableList<MarkerModel>) {
-                                // TODO: reimplement title, image etc.
-                                markers.forEach {
-                                    setMarkerOnMap(
-                                        LatLng(it.latitude, it.longtitude),
-                                        "Default Title"
-                                    )
-                                }
-                            }
-
-                            override fun onError(t: Throwable) {
-                                Log.e("LoadCallback", null, t)
-                            }
-                        })
+                        fetchMarkers(LatLng(result.lastLocation.latitude,
+                            result.lastLocation.longitude))
                     }
                 }
             }
@@ -127,6 +109,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 if (locationList != null && locationList.size != 0) {
                     val location = locationList[0]
                     val latLng = LatLng(location.latitude, location.longitude)
+                    fetchMarkers(latLng)
                     map.addMarker(MarkerOptions().position(latLng).title(place.name))
                     map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
                 }
@@ -160,6 +143,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 lastLocation = location
                 val currentLocation = LatLng(location.latitude, location.longitude)
                 map.animateCamera(CameraUpdateFactory.newLatLng(currentLocation))
+                fetchMarkers(currentLocation)
             }
         }
     }
@@ -215,13 +199,34 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
-    private fun setMarkerOnMap(location: LatLng, title: String) {
+    private fun fetchMarkers(position: LatLng) {
+        map.clear()
+        mapScreenViewModel.getMarkers(position, object : DataSource.LoadCallback {
+            override fun onLoad(markers: MutableList<MarkerModel>) {
+                markers.forEach {
+                    setMarkerOnMap(
+                        it,
+                        "Default Title"
+                    )
+                }
+            }
+
+            override fun onError(t: Throwable) {
+                Log.e("LoadCallback", null, t)
+            }
+        })
+    }
+
+    private fun setMarkerOnMap(marker: MarkerModel, title: String) {
+        val location = LatLng(marker.latitude, marker.longtitude)
         val options = MarkerOptions().position(location)
         options.title(title)
+            .icon(BitmapDescriptorFactory.fromResource(marker.emotion.resId))
         map.addMarker(options)
     }
 
     override fun onMarkerClick(marker: Marker?) = false
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CHECK_SETTINGS) {
