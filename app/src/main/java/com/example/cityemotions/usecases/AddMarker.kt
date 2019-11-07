@@ -5,12 +5,19 @@ import com.example.cityemotions.datasources.DataSource
 import com.example.cityemotions.datasources.MarkerDataSource
 
 
+/**
+ * A class that allows you to add new marker to the storage
+ *
+ * @property dataRepository instance of MarkerDataStorage
+ * @constructor Creates new UseCase
+ */
 class AddMarker (private val dataRepository: MarkerDataSource):
         UseCase<AddMarker.RequestValue, AddMarker.ResponseValue>() {
-    companion object {
-        private val TAG: String = "AddMarkers"
-    }
-
+    /**
+     * Add new marker to the storage
+     *
+     * @param requestValue MarkerModel object to add
+     */
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
             dataRepository.addMarker(requestValue.marker, object :

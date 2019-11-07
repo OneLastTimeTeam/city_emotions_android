@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.cityemotions.Injector
 
 
+/**
+ * Factory produces ViewModels objects
+ */
 class ViewModelFactory : ViewModelProvider.Factory {
     companion object {
         private var instance: ViewModelFactory? = null
@@ -17,6 +20,13 @@ class ViewModelFactory : ViewModelProvider.Factory {
         }
     }
 
+    /**
+     * Function which creates ViewModel class object by class name
+     *
+     * @param T ViewModel class type
+     * @param modelClass java class name of ViewModel class
+     * @return ViewModel object
+     */
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass == MapScreenViewModel::class.java) {
             return MapScreenViewModel(Injector.provideGetMarkers(),

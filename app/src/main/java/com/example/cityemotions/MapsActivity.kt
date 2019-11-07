@@ -12,7 +12,7 @@ class MapsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_maps)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, MapScreenFragment.getInstance())
+                .replace(R.id.fragment_container, MapScreenFragment())
                 .commit()
         }
     }

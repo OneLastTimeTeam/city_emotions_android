@@ -6,12 +6,20 @@ import com.example.cityemotions.datasources.MarkerDataSource
 import com.google.android.gms.maps.model.LatLng
 
 
+/**
+ * A class that allows you to get markers from the storage
+ *
+ * @property dataRepository instance of MarkerDataStorage
+ * @constructor Creates new UseCase
+ */
 class GetMarkers(private val dataRepository: MarkerDataSource):
     UseCase<GetMarkers.RequestValue, GetMarkers.ResponseValue>() {
-    companion object {
-        private val TAG: String = "GetMarkers"
-    }
 
+    /**
+     * Return markers from storage
+     *
+     * @param requestValue current position on map
+     */
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
             dataRepository.getMarkers(requestValue.position, object :
