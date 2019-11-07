@@ -7,6 +7,10 @@ import com.example.cityemotions.usecases.GetMarkers
 import com.example.cityemotions.usecases.UseCaseHandler
 
 
+/**
+ *  Dependency injector.
+ *  Provides all necessary object instances
+ */
 object Injector {
     fun provideViewModelFactory(): ViewModelFactory = ViewModelFactory.getInstance()
 

@@ -4,6 +4,9 @@ import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLng
 
 
+/**
+ * DataSource interface for working with markers
+ */
 interface DataSource {
     interface LoadCallback {
         fun onLoad(markers: MutableList<MarkerModel>)

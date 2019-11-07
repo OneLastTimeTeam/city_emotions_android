@@ -10,10 +10,23 @@ import com.example.cityemotions.usecases.UseCaseHandler
 import com.google.android.gms.maps.model.LatLng
 
 
+/**
+ * Implementation of ViewModel, operates with work on the map
+ *
+ * @property getMarkers UseCase for getting markers
+ * @property addMarker UseCase for adding markers
+ * @property useCaseHandler handler for all UseCases
+ */
 class MapScreenViewModel(private val getMarkers: GetMarkers,
                          private val addMarker: AddMarker,
                          private val useCaseHandler: UseCaseHandler
 ): ViewModel() {
+    /**
+     * Return markers by position
+     *
+     * @param position current position on Map
+     * @param callback user`s callback implementation
+     */
     fun getMarkers(position: LatLng, callback: DataSource.LoadCallback) {
         val requestValue = GetMarkers.RequestValue(position)
         useCaseHandler.execute(getMarkers, requestValue, object :
@@ -28,6 +41,12 @@ class MapScreenViewModel(private val getMarkers: GetMarkers,
         })
     }
 
+    /**
+     * Add MarkerModel to storage
+     *
+     * @param marker marker model to add
+     * @param callback user`s callback implementation
+     */
     fun addMarker(marker: MarkerModel, callback: DataSource.AddCallback) {
         val requestValue = AddMarker.RequestValue(marker)
 
