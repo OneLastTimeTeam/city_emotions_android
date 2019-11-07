@@ -12,9 +12,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.Injector
+import com.example.cityemotions.OnSelectProfile
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.DataSource
@@ -122,6 +124,11 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 as AutocompleteSupportFragment
         searchBar.setPlaceFields(arrayListOf(Place.Field.ID, Place.Field.NAME))
         searchBar.setOnPlaceSelectedListener(this)
+
+        // Setup buttons
+        view.findViewById<ImageButton>(R.id.profile_button).setOnClickListener {
+            (activity as OnSelectProfile).onProfileSelected()
+        }
     }
 
     override fun onPlaceSelected(place: Place) {

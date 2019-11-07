@@ -9,10 +9,20 @@
         android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
         />
 
-    <fragment
-        android:id="@+id/google_map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <RelativeLayout android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <fragment
+            android:id="@+id/google_map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageButton
+            android:id="@+id/profile_button"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/profile_icon" />
+    </RelativeLayout>
 
 </LinearLayout>
