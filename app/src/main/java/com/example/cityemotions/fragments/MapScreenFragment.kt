@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.Injector
@@ -39,7 +40,7 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
  * Fragment with map-screen. Implements the logic of working with map
  */
 class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-    PlaceSelectionListener {
+    PlaceSelectionListener, GoogleMap.OnMapLongClickListener {
     companion object {
         /** Permission access constants */
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -74,6 +75,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
+
+    private var placedMarker: Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -142,9 +145,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         if (locationList != null && locationList.size != 0) {
             val location = locationList[0]
             val latLng = LatLng(location.latitude, location.longitude)
-            fetchMarkers(latLng)
-            map.addMarker(MarkerOptions().position(latLng).title(place.name))
-            map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+            setSimpleMarkerOnMap(latLng)
         }
     }
 
@@ -158,11 +159,27 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map = googleMap
         map.uiSettings.isZoomControlsEnabled = true
         map.setOnMarkerClickListener(this)
+        map.setOnMapLongClickListener(this)
         setupMapLocation()
         setupLocationUpdates()
     }
 
-    override fun onMarkerClick(marker: Marker?) = false
+    override fun onMarkerClick(marker: Marker?): Boolean {
+        if (marker != null && placedMarker != null) {
+            if (marker == placedMarker) {
+                Toast.makeText(activity, "TODODOD", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        return true
+    }
+
+    override fun onMapLongClick(pos: LatLng?) {
+        Toast.makeText(activity, "Click", Toast.LENGTH_LONG).show()
+        if (pos != null) {
+            setSimpleMarkerOnMap(pos)
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -278,7 +295,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         mapScreenViewModel.getMarkers(position, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: MutableList<MarkerModel>) {
                 markers.forEach {
-                    setMarkerOnMap(
+                    setCustomMarkerOnMap(
                         it,
                         "Default Title"
                     )
@@ -294,7 +311,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /**
      * Displays MarkerModel on map
      */
-    private fun setMarkerOnMap(marker: MarkerModel, title: String) {
+    private fun setCustomMarkerOnMap(marker: MarkerModel, title: String) {
         val location = LatLng(marker.latitude, marker.longtitude)
         val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
@@ -302,5 +319,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         options.title(title)
             .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
         map.addMarker(options)
+    }
+
+    /**
+     * Set simple marker on map to add emotion to its location
+     */
+    private fun setSimpleMarkerOnMap(latLng: LatLng) {
+        fetchMarkers(latLng)
+        placedMarker = map.addMarker(MarkerOptions().position(latLng))
+        map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 }
