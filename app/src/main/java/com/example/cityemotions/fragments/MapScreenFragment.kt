@@ -40,14 +40,11 @@ import java.io.IOException
  * Fragment with map-screen. Implements the logic of working with map
  */
 class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-    PlaceSelectionListener, GoogleMap.OnMapLongClickListener {
+    PlaceSelectionListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnCameraIdleListener {
     companion object {
         /** Permission access constants */
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val REQUEST_CHECK_SETTINGS = 2
-
-        // Пока будем апдейтить позицию и метки на экране только если локейшн передвинулся на >3 метра
-        private const val minUpdateDistance = 3.0
 
         private const val markerSize = 96
     }
@@ -59,7 +56,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     /** Last sent location  */
-    private var lastLocation: Location? = null
+    private lateinit var lastLocation: Location
 
     /** Geocoder to get location by name */
     private lateinit var geocoder: Geocoder
@@ -86,24 +83,12 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
         geocoder = Geocoder(activity as Context)
 
+        // Just update lastLocation
         locationCallback = object : LocationCallback() {
-            private fun positionChanged(newLocation: Location): Boolean {
-                if (lastLocation == null) {
-                    return true
-                }
-
-                val distance = lastLocation?.distanceTo(newLocation) as Float
-                return distance > minUpdateDistance
-            }
-
             override fun onLocationResult(result: LocationResult?) {
                 super.onLocationResult(result)
-                if (result != null && result.lastLocation != null) {
-                    if (positionChanged(result.lastLocation)) {
-                        lastLocation = result.lastLocation
-                        fetchMarkers(LatLng(result.lastLocation.latitude,
-                            result.lastLocation.longitude))
-                    }
+                if (result != null) {
+                    lastLocation = result.lastLocation
                 }
             }
         }
@@ -140,6 +125,28 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
+    override fun onMapReady(googleMap: GoogleMap) {
+        map = googleMap
+        map.uiSettings.isZoomControlsEnabled = true
+        map.setOnMarkerClickListener(this)
+        map.setOnMapLongClickListener(this)
+        map.setOnCameraIdleListener(this)
+        setupMapLocation()
+        setupLocationUpdates()
+        placedMarker = null
+        fetchMarkers(map.projection.visibleRegion.latLngBounds)
+    }
+
+    override fun onMarkerClick(marker: Marker?): Boolean {
+        if (marker != null && placedMarker != null) {
+            if (marker == placedMarker) {
+                (activity as OnMarkerClicker).onMarkerClicked(marker.position)
+                return true
+            }
+        }
+        return false
+    }
+
     override fun onPlaceSelected(place: Place) {
         try {
             val locationList = geocoder.getFromLocationName(place.name, 1)
@@ -157,23 +164,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        map = googleMap
-        map.uiSettings.isZoomControlsEnabled = true
-        map.setOnMarkerClickListener(this)
-        map.setOnMapLongClickListener(this)
-        setupMapLocation()
-        setupLocationUpdates()
-    }
-
-    override fun onMarkerClick(marker: Marker?): Boolean {
-        if (marker != null && placedMarker != null) {
-            if (marker == placedMarker) {
-                (activity as OnMarkerClicker).onMarkerClicked(marker.position)
-            }
+    override fun onCameraIdle() {
+        val bounds = map.projection.visibleRegion.latLngBounds
+        fetchMarkers(bounds)
+        // Restore placed marker
+        val placedMarkerPosition = placedMarker?.position
+        if (placedMarkerPosition != null) {
+            placedMarker = map.addMarker(MarkerOptions().position(placedMarkerPosition))
         }
-
-        return true
     }
 
     override fun onMapLongClick(pos: LatLng?) {
@@ -205,9 +203,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     /**
-     * Get location tracking permission and initial setup
+     * Check ACCESS_FINE_LOCATION permission and request if its not granted
      */
-    private fun setupMapLocation() {
+    private fun checkLocationPermissions(): Boolean {
         if (ActivityCompat.checkSelfPermission(
                 activity as Activity,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -218,6 +216,16 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST_CODE
             )
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Get location tracking permission and initial setup
+     */
+    private fun setupMapLocation() {
+        if (!checkLocationPermissions()) {
             return
         }
         map.isMyLocationEnabled = true
@@ -225,9 +233,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         fusedLocationClient.lastLocation.addOnSuccessListener(activity as Activity) { location ->
             if (location != null) {
                 lastLocation = location
-                val currentLocation = LatLng(location.latitude, location.longitude)
-                map.animateCamera(CameraUpdateFactory.newLatLng(currentLocation))
-                fetchMarkers(currentLocation)
             }
         }
     }
@@ -273,37 +278,10 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * Get location tracking permission and setup location updates handlers
      */
     private fun setupLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                activity as Activity,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                activity as Activity,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE)
+        if (!checkLocationPermissions()) {
             return
         }
-
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
-    }
-
-    /**
-     * Updates the state of the map and the markers displayed on it
-     */
-    private fun fetchMarkers(position: LatLng) {
-        map.clear()
-        mapScreenViewModel.getMarkers(position, object : MarkerDataSource.LoadCallback {
-            override fun onLoad(markers: MutableList<MarkerModel>) {
-                markers.forEach {
-                    setCustomMarkerOnMap(it)
-                }
-            }
-
-            override fun onError(t: Throwable) {
-                Log.e("LoadCallback", null, t)
-            }
-        })
     }
 
     /**
@@ -323,8 +301,25 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * Set simple marker on map to add emotion to its location
      */
     private fun setSimpleMarkerOnMap(latLng: LatLng) {
-        fetchMarkers(latLng)
         placedMarker = map.addMarker(MarkerOptions().position(latLng))
         map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+    }
+
+    /**
+     * Updates the state of the map and the markers displayed on it
+     */
+    private fun fetchMarkers(bounds: LatLngBounds) {
+        map.clear()
+        mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
+            override fun onLoad(markers: MutableList<MarkerModel>) {
+                markers.forEach {
+                    setCustomMarkerOnMap(it)
+                }
+            }
+
+            override fun onError(t: Throwable) {
+                Log.e("LoadCallback", null, t)
+            }
+        })
     }
 }
