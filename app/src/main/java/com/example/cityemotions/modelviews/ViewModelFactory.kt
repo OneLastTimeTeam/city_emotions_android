@@ -30,7 +30,9 @@ class ViewModelFactory : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass == MapScreenViewModel::class.java) {
             return MapScreenViewModel(Injector.provideGetMarkers(),
-                Injector.provideAddMarker(),
+                Injector.provideUseCaseHandler()) as T
+        } else if (modelClass == NewMarkerScreenViewModel::class.java) {
+            return NewMarkerScreenViewModel(Injector.provideAddMarker(),
                 Injector.provideUseCaseHandler()) as T
         }
         throw IllegalArgumentException("Unknown class $modelClass")

@@ -7,7 +7,6 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
@@ -16,10 +15,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.Injector
+import com.example.cityemotions.OnMarkerClicker
 import com.example.cityemotions.OnSelectProfile
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
@@ -34,6 +33,7 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import java.io.IOException
 
 
 /**
@@ -73,10 +73,11 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** Are location updates enabled? */
     private var locationUpdateState = false
 
+    private var placedMarker: Marker? = null
+
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
 
-    private var placedMarker: Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,13 +141,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onPlaceSelected(place: Place) {
-        val locationList = geocoder.getFromLocationName(place.name, 1)
-
-        if (locationList != null && locationList.size != 0) {
-            val location = locationList[0]
-            val latLng = LatLng(location.latitude, location.longitude)
-            setSimpleMarkerOnMap(latLng)
-        }
+        try {
+            val locationList = geocoder.getFromLocationName(place.name, 1)
+            if (locationList != null && locationList.size != 0) {
+                val location = locationList[0]
+                val latLng = LatLng(location.latitude, location.longitude)
+                setSimpleMarkerOnMap(latLng)
+            }
+        } catch (_: IOException) {}
     }
 
     override fun onError(status: Status) {
@@ -167,7 +169,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onMarkerClick(marker: Marker?): Boolean {
         if (marker != null && placedMarker != null) {
             if (marker == placedMarker) {
-                Toast.makeText(activity, "TODODOD", Toast.LENGTH_LONG).show()
+                (activity as OnMarkerClicker).onMarkerClicked(marker.position)
             }
         }
 
@@ -175,7 +177,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onMapLongClick(pos: LatLng?) {
-        Toast.makeText(activity, "Click", Toast.LENGTH_LONG).show()
         if (pos != null) {
             setSimpleMarkerOnMap(pos)
         }
@@ -295,10 +296,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         mapScreenViewModel.getMarkers(position, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: MutableList<MarkerModel>) {
                 markers.forEach {
-                    setCustomMarkerOnMap(
-                        it,
-                        "Default Title"
-                    )
+                    setCustomMarkerOnMap(it)
                 }
             }
 
@@ -311,12 +309,12 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /**
      * Displays MarkerModel on map
      */
-    private fun setCustomMarkerOnMap(marker: MarkerModel, title: String) {
+    private fun setCustomMarkerOnMap(marker: MarkerModel) {
         val location = LatLng(marker.latitude, marker.longtitude)
         val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
         val options = MarkerOptions().position(location)
-        options.title(title)
+        options.title(marker.emotion.title)
             .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
         map.addMarker(options)
     }
