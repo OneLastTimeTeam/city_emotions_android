@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
@@ -19,7 +22,7 @@ import com.example.cityemotions.Injector
 import com.example.cityemotions.OnSelectProfile
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
-import com.example.cityemotions.datasources.DataSource
+import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.MapScreenViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.common.api.Status
@@ -44,6 +47,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         // Пока будем апдейтить позицию и метки на экране только если локейшн передвинулся на >3 метра
         private const val minUpdateDistance = 3.0
+
+        private const val markerSize = 96
     }
 
     /** GoogleMap object */
@@ -64,7 +69,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** Location requests settings */
     private lateinit var locationRequest: LocationRequest
 
-    /** Is location updates enabled? */
+    /** Are location updates enabled? */
     private var locationUpdateState = false
 
     /** ViewModel class to work with map and sending requests to storage and etc. */
@@ -270,7 +275,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      */
     private fun fetchMarkers(position: LatLng) {
         map.clear()
-        mapScreenViewModel.getMarkers(position, object : DataSource.LoadCallback {
+        mapScreenViewModel.getMarkers(position, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: MutableList<MarkerModel>) {
                 markers.forEach {
                     setMarkerOnMap(
@@ -291,9 +296,11 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      */
     private fun setMarkerOnMap(marker: MarkerModel, title: String) {
         val location = LatLng(marker.latitude, marker.longtitude)
+        val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
         val options = MarkerOptions().position(location)
         options.title(title)
-            .icon(BitmapDescriptorFactory.fromResource(marker.emotion.resId))
+            .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
         map.addMarker(options)
     }
 }
