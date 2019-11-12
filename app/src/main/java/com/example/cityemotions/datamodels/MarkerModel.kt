@@ -11,12 +11,12 @@ import com.example.cityemotions.R
  */
 enum class Emotion(val dbId: Int, val resId: Int) {
     HAPPY(0, R.drawable.emotion_happy),
-    SURPRISE(1, R.drawable.emotion_happy),
-    SADNESS(2, R.drawable.emotion_happy),
-    ANGER(3, R.drawable.emotion_happy),
-    DISGUST(4, R.drawable.emotion_happy),
-    CONTEMPT(5, R.drawable.emotion_happy),
-    FEAR(6, R.drawable.emotion_happy)
+    SURPRISE(1, R.drawable.emotion_surprise),
+    SADNESS(2, R.drawable.emotion_sadness),
+    ANGER(3, R.drawable.emotion_anger),
+    DISGUST(4, R.drawable.emotion_disgust),
+    CONTEMPT(5, R.drawable.emotion_contempt),
+    FEAR(6, R.drawable.emotion_fear)
 }
 
 

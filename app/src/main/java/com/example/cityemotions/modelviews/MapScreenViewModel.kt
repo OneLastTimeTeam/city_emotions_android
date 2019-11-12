@@ -3,7 +3,7 @@ package com.example.cityemotions.modelviews
 import androidx.lifecycle.ViewModel
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.usecases.AddMarker
-import com.example.cityemotions.datasources.DataSource
+import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.usecases.GetMarkers
 import com.example.cityemotions.usecases.UseCase
 import com.example.cityemotions.usecases.UseCaseHandler
@@ -27,7 +27,7 @@ class MapScreenViewModel(private val getMarkers: GetMarkers,
      * @param position current position on Map
      * @param callback user`s callback implementation
      */
-    fun getMarkers(position: LatLng, callback: DataSource.LoadCallback) {
+    fun getMarkers(position: LatLng, callback: MarkerDataSource.LoadCallback) {
         val requestValue = GetMarkers.RequestValue(position)
         useCaseHandler.execute(getMarkers, requestValue, object :
             UseCase.UseCaseCallback<GetMarkers.ResponseValue> {
@@ -47,7 +47,7 @@ class MapScreenViewModel(private val getMarkers: GetMarkers,
      * @param marker marker model to add
      * @param callback user`s callback implementation
      */
-    fun addMarker(marker: MarkerModel, callback: DataSource.AddCallback) {
+    fun addMarker(marker: MarkerModel, callback: MarkerDataSource.AddCallback) {
         val requestValue = AddMarker.RequestValue(marker)
 
         useCaseHandler.execute(addMarker, requestValue, object :

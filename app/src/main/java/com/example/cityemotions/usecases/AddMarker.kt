@@ -1,7 +1,6 @@
 package com.example.cityemotions.usecases
 
 import com.example.cityemotions.datamodels.MarkerModel
-import com.example.cityemotions.datasources.DataSource
 import com.example.cityemotions.datasources.MarkerDataSource
 
 
@@ -21,7 +20,7 @@ class AddMarker (private val dataRepository: MarkerDataSource):
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
             dataRepository.addMarker(requestValue.marker, object :
-                DataSource.AddCallback {
+                MarkerDataSource.AddCallback {
                 override fun onAdd() {
                     useCaseCallback?.onSuccess(ResponseValue())
                 }

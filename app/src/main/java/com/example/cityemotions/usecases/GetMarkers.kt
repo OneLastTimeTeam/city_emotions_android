@@ -1,7 +1,6 @@
 package com.example.cityemotions.usecases
 
 import com.example.cityemotions.datamodels.MarkerModel
-import com.example.cityemotions.datasources.DataSource
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.google.android.gms.maps.model.LatLng
 
@@ -23,7 +22,7 @@ class GetMarkers(private val dataRepository: MarkerDataSource):
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
             dataRepository.getMarkers(requestValue.position, object :
-                DataSource.LoadCallback {
+                MarkerDataSource.LoadCallback {
                 override fun onLoad(markers: MutableList<MarkerModel>) {
                     val responseValue =
                         ResponseValue(markers)
