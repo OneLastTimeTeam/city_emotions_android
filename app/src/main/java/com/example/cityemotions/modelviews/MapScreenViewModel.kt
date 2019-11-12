@@ -1,13 +1,11 @@
 package com.example.cityemotions.modelviews
 
 import androidx.lifecycle.ViewModel
-import com.example.cityemotions.datamodels.MarkerModel
-import com.example.cityemotions.usecases.AddMarker
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.usecases.GetMarkers
 import com.example.cityemotions.usecases.UseCase
 import com.example.cityemotions.usecases.UseCaseHandler
-import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 
 
 /**
@@ -22,11 +20,11 @@ class MapScreenViewModel(private val getMarkers: GetMarkers,
     /**
      * Return markers by position
      *
-     * @param position current position on Map
+     * @param bounds bounds of visible piece of map
      * @param callback user`s callback implementation
      */
-    fun getMarkers(position: LatLng, callback: MarkerDataSource.LoadCallback) {
-        val requestValue = GetMarkers.RequestValue(position)
+    fun getMarkers(bounds: LatLngBounds, callback: MarkerDataSource.LoadCallback) {
+        val requestValue = GetMarkers.RequestValue(bounds)
         useCaseHandler.execute(getMarkers, requestValue, object :
             UseCase.UseCaseCallback<GetMarkers.ResponseValue> {
             override fun onSuccess(response: GetMarkers.ResponseValue) {

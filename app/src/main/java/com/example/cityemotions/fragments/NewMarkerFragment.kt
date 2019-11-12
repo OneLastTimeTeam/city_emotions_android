@@ -1,6 +1,5 @@
 package com.example.cityemotions.fragments
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -24,12 +23,10 @@ class NewMarkerFragment: Fragment() {
 
         fun createFragment(latLng: LatLng): NewMarkerFragment {
             val fragment = NewMarkerFragment()
-
-            fragment.apply { arguments = Bundle().apply {
-                    putDouble(SAVED_LATITUDE, latLng.latitude)
-                    putDouble(SAVED_LONGTITUDE, latLng.longitude)
-                }
-            }
+            val bundle = Bundle()
+            bundle.putDouble(SAVED_LATITUDE, latLng.latitude)
+            bundle.putDouble(SAVED_LONGTITUDE, latLng.longitude)
+            fragment.arguments = bundle
             return fragment
         }
     }

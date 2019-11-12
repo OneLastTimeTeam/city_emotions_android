@@ -3,6 +3,7 @@ package com.example.cityemotions.datasources
 import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import kotlin.random.Random
 
 
@@ -23,24 +24,30 @@ class MarkerDataSource {
 
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
-//    init {
-//        val emotionsArray = Emotion.values()
-//        for (x in 0..10) {
-//            val longtitude = Random.nextFloat() * 360.0 - 180.0
-//            val latitude = Random.nextFloat() * 180.0 - 90.0
-//            val emotion = emotionsArray[emotionsArray.indices.random()]
-//            data.add(MarkerModel(latitude, longtitude, emotion))
-//        }
-//    }
+    init {
+        val emotionsArray = Emotion.values()
+        for (x in 0..100) {
+            val longtitude = Random.nextFloat() * 360.0 - 180.0
+            val latitude = Random.nextFloat() * 180.0 - 90.0
+            val emotion = emotionsArray[emotionsArray.indices.random()]
+            data.add(MarkerModel(latitude, longtitude, emotion))
+        }
+    }
 
     /**
      * GetMarkers from storage and put them in callback
      *
-     * @param position current position on map
+     * @param bounds bounds of visible piece of map
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
-    fun getMarkers(position: LatLng, callback: LoadCallback) {
-        callback.onLoad(data)
+    fun getMarkers(bounds: LatLngBounds, callback: LoadCallback) {
+        val markersToSend = mutableListOf<MarkerModel>()
+        data.forEach {
+            if (bounds.contains(LatLng(it.latitude, it.longtitude))) {
+                markersToSend.add(it)
+            }
+        }
+        callback.onLoad(markersToSend)
     }
 
     /**
