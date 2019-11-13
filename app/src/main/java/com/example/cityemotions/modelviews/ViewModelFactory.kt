@@ -29,9 +29,11 @@ class ViewModelFactory : ViewModelProvider.Factory {
      */
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass == MapScreenViewModel::class.java) {
+            @Suppress("UNCHECKED_CAST")
             return MapScreenViewModel(Injector.provideGetMarkers(),
                 Injector.provideUseCaseHandler()) as T
         } else if (modelClass == NewMarkerScreenViewModel::class.java) {
+            @Suppress("UNCHECKED_CAST")
             return NewMarkerScreenViewModel(Injector.provideAddMarker(),
                 Injector.provideUseCaseHandler()) as T
         }

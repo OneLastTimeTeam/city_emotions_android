@@ -176,6 +176,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     override fun onMapLongClick(pos: LatLng?) {
         if (pos != null) {
+            placedMarker?.remove()
             setSimpleMarkerOnMap(pos)
         }
     }
