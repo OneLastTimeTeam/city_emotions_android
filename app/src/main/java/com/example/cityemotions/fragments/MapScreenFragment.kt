@@ -310,15 +310,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      */
     private fun setSimpleMarkerOnMap(latLng: LatLng) {
         placedMarker = map.addMarker(MarkerOptions().position(latLng))
-        map.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 
     /**
      * Updates the state of the map and the markers displayed on it
      */
      private fun fetchMarkers(bounds: LatLngBounds) {
+        map.clear()
         launch {
-            map.clear()
             mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
                 override fun onLoad(markers: MutableList<MarkerModel>) {
                     markers.forEach {
