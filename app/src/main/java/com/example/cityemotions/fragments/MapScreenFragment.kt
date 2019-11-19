@@ -33,14 +33,17 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import kotlinx.coroutines.*
 import java.io.IOException
+import kotlin.coroutines.CoroutineContext
 
 
 /**
  * Fragment with map-screen. Implements the logic of working with map
  */
 class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-    PlaceSelectionListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnCameraIdleListener {
+    PlaceSelectionListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnCameraIdleListener,
+    CoroutineScope {
     companion object {
         /** Permission access constants */
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -48,6 +51,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         private const val markerSize = 96
     }
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main
 
     /** GoogleMap object */
     private lateinit var map: GoogleMap
@@ -193,6 +199,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     override fun onPause() {
         super.onPause()
+        coroutineContext.cancelChildren()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
@@ -309,18 +316,20 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /**
      * Updates the state of the map and the markers displayed on it
      */
-    private fun fetchMarkers(bounds: LatLngBounds) {
-        map.clear()
-        mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
-            override fun onLoad(markers: MutableList<MarkerModel>) {
-                markers.forEach {
-                    setCustomMarkerOnMap(it)
+     private fun fetchMarkers(bounds: LatLngBounds) {
+        launch {
+            map.clear()
+            mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
+                override fun onLoad(markers: MutableList<MarkerModel>) {
+                    markers.forEach {
+                        setCustomMarkerOnMap(it)
+                    }
                 }
-            }
 
-            override fun onError(t: Throwable) {
-                Log.e("LoadCallback", null, t)
-            }
-        })
+                override fun onError(t: Throwable) {
+                    Log.e("LoadCallback", null, t)
+                }
+            })
+        }
     }
 }
