@@ -6,6 +6,8 @@ import com.example.cityemotions.usecases.GetMarkers
 import com.example.cityemotions.usecases.UseCase
 import com.example.cityemotions.usecases.UseCaseHandler
 import com.google.android.gms.maps.model.LatLngBounds
+import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 
 
 /**
@@ -16,24 +18,31 @@ import com.google.android.gms.maps.model.LatLngBounds
  */
 class MapScreenViewModel(private val getMarkers: GetMarkers,
                          private val useCaseHandler: UseCaseHandler
-): ViewModel() {
+): ViewModel(), CoroutineScope {
+    private val job: Job = SupervisorJob()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
     /**
      * Return markers by position
      *
      * @param bounds bounds of visible piece of map
      * @param callback user`s callback implementation
      */
-    fun getMarkers(bounds: LatLngBounds, callback: MarkerDataSource.LoadCallback) {
-        val requestValue = GetMarkers.RequestValue(bounds)
-        useCaseHandler.execute(getMarkers, requestValue, object :
-            UseCase.UseCaseCallback<GetMarkers.ResponseValue> {
-            override fun onSuccess(response: GetMarkers.ResponseValue) {
-                callback.onLoad(response.markers)
-            }
+    suspend fun getMarkers(bounds: LatLngBounds, callback: MarkerDataSource.LoadCallback) {
+        coroutineContext.cancelChildren()
+        launch {
+            val requestValue = GetMarkers.RequestValue(bounds)
+            useCaseHandler.execute(getMarkers, requestValue, object :
+                UseCase.UseCaseCallback<GetMarkers.ResponseValue> {
+                override fun onSuccess(response: GetMarkers.ResponseValue) {
+                    callback.onLoad(response.markers)
+                }
 
-            override fun onError(t: Throwable) {
-                callback.onError(t)
-            }
-        })
+                override fun onError(t: Throwable) {
+                    callback.onError(t)
+                }
+            })
+        }
     }
 }

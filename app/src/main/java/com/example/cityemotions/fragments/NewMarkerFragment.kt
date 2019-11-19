@@ -15,8 +15,12 @@ import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.NewMarkerScreenViewModel
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 
-class NewMarkerFragment: Fragment() {
+class NewMarkerFragment: Fragment(), CoroutineScope {
     companion object {
         const val SAVED_LONGTITUDE: String = "saved.longtitude"
         const val SAVED_LATITUDE: String = "saved.latitude"
@@ -30,6 +34,9 @@ class NewMarkerFragment: Fragment() {
             return fragment
         }
     }
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main
 
     private lateinit var dataAdapter: EmotionAdapter
     private var longtitude: Double = 0.0
@@ -69,16 +76,18 @@ class NewMarkerFragment: Fragment() {
                 val emotionIdx = dataAdapter.checkedEmotion?.adapterPosition
                 if (emotionIdx != null) {
                     val marker = MarkerModel(latitude, longtitude, Emotion.values()[emotionIdx])
-                    newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
-                        override fun onAdd() {
-                            activity?.onBackPressed()
-                        }
+                    launch {
+                        newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
+                            override fun onAdd() {
+                                activity?.onBackPressed()
+                            }
 
-                        override fun onError(t: Throwable) {
-                            Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
-                                .show()
-                        }
-                    })
+                            override fun onError(t: Throwable) {
+                                Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
+                                    .show()
+                            }
+                        })
+                    }
                 }
             }
         }
