@@ -160,6 +160,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 val location = locationList[0]
                 val latLng = LatLng(location.latitude, location.longitude)
                 setSimpleMarkerOnMap(latLng)
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0f))
             }
         } catch (_: IOException) {}
     }
@@ -240,6 +241,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         fusedLocationClient.lastLocation.addOnSuccessListener(activity as Activity) { location ->
             if (location != null) {
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                    LatLng(location.latitude,
+                    location.longitude), 18.0f))
                 lastLocation = location
             }
         }
