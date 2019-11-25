@@ -110,8 +110,7 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
             if (checkedEmotion != null && checkedEmotion == holder) {
                 holder.checkButton.setImageResource(R.drawable.checked_checkbox)
             }
-
-            holder.checkButton.setOnClickListener {
+            holder.itemView.setOnClickListener {
                 checkedEmotion?.checkButton?.setImageResource(R.drawable.unchecked_checkbox)
                 holder.checkButton.setImageResource(R.drawable.checked_checkbox)
                 checkedEmotion = holder
