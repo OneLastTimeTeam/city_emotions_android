@@ -4,20 +4,14 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Profile"
-        android:layout_gravity="center_horizontal"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="My emotions"/>
+        android:gravity="center_horizontal"
+        android:text="Sign up"/>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="My emotions"
-        android:layout_gravity="bottom"/>
+        android:text="Sign up with google"/>
 
 </LinearLayout>
