@@ -15,6 +15,7 @@
         android:text="My emotions"/>
 
     <Button
+        android:id="@+id/user_emotions_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="My emotions"

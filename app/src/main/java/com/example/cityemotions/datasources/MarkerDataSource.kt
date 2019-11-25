@@ -61,6 +61,11 @@ class MarkerDataSource {
         callback.onAdd()
     }
 
+    fun removeMarker(marker: MarkerModel, callback: RemoveCallback) {
+        data.remove(marker)
+        callback.onRemove()
+    }
+
     interface LoadCallback {
         fun onLoad(markers: MutableList<MarkerModel>)
         fun onError(t: Throwable)
@@ -68,6 +73,11 @@ class MarkerDataSource {
 
     interface AddCallback {
         fun onAdd()
+        fun onError(t: Throwable)
+    }
+
+    interface RemoveCallback {
+        fun onRemove()
         fun onError(t: Throwable)
     }
 }
