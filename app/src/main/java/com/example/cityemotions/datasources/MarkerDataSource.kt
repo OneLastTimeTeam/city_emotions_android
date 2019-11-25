@@ -24,15 +24,15 @@ class MarkerDataSource {
 
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
-    init {
-        val emotionsArray = Emotion.values()
-        for (x in 0..100) {
-            val longtitude = Random.nextFloat() * 360.0 - 180.0
-            val latitude = Random.nextFloat() * 180.0 - 90.0
-            val emotion = emotionsArray[emotionsArray.indices.random()]
-            data.add(MarkerModel(latitude, longtitude, emotion))
-        }
-    }
+//    init {
+//        val emotionsArray = Emotion.values()
+//        for (x in 0..100) {
+//            val longtitude = Random.nextFloat() * 360.0 - 180.0
+//            val latitude = Random.nextFloat() * 180.0 - 90.0
+//            val emotion = emotionsArray[emotionsArray.indices.random()]
+//            data.add(MarkerModel(latitude, longtitude, emotion))
+//        }
+//    }
 
     /**
      * GetMarkers from storage and put them in callback
@@ -48,6 +48,10 @@ class MarkerDataSource {
             }
         }
         callback.onLoad(markersToSend)
+    }
+
+    fun getUserMarkers(callback: LoadCallback) {
+        callback.onLoad(data)
     }
 
     /**

@@ -39,6 +39,7 @@ class ViewModelFactory : ViewModelProvider.Factory {
         } else if (modelClass == UserEmotionsViewModel::class.java) {
             @Suppress("UNCHECKED_CAST")
             return UserEmotionsViewModel(Injector.provideRemoveMarker(),
+                Injector.provideGetUsersMarker(),
                 Injector.provideUseCaseHandler()) as T
         }
         throw IllegalArgumentException("Unknown class $modelClass")
