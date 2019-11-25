@@ -2,10 +2,7 @@ package com.example.cityemotions
 
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.ViewModelFactory
-import com.example.cityemotions.usecases.AddMarker
-import com.example.cityemotions.usecases.GetMarkers
-import com.example.cityemotions.usecases.RemoveMarker
-import com.example.cityemotions.usecases.UseCaseHandler
+import com.example.cityemotions.usecases.*
 
 
 /**
@@ -24,4 +21,6 @@ object Injector {
     fun provideAddMarker(): AddMarker = AddMarker(provideMarkerDataSource())
 
     fun provideRemoveMarker(): RemoveMarker = RemoveMarker(provideMarkerDataSource())
+
+    fun provideGetUsersMarker(): GetUsersMarkers = GetUsersMarkers(provideMarkerDataSource())
 }

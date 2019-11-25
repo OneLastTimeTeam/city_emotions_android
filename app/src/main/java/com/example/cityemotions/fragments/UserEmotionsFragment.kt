@@ -1,6 +1,8 @@
 package com.example.cityemotions.fragments
 
+import android.location.Geocoder
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,12 +11,14 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cityemotions.Injector
-import com.example.cityemotions.OnEmotionsClicker
 import com.example.cityemotions.R
-import com.example.cityemotions.datamodels.Emotion
+import com.example.cityemotions.datamodels.MarkerModel
+import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.UserEmotionsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
 class UserEmotionsFragment: Fragment(), CoroutineScope {
@@ -24,11 +28,11 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
 
     private lateinit var dataAdapter: EmotionAdapter
 
-    private lateinit var userEmotionsViewModel: UserEmotionsViewModel
+    lateinit var userEmotionsViewModel: UserEmotionsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dataAdapter = EmotionAdapter()
+        dataAdapter = EmotionAdapter(Geocoder(activity), this)
         val factory = Injector.provideViewModelFactory()
         userEmotionsViewModel = factory.create(UserEmotionsViewModel::class.java)
     }
@@ -47,40 +51,84 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
         val recyclerView = view.findViewById<RecyclerView>(R.id.user_emotions_list)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = dataAdapter
+        launch {
+            userEmotionsViewModel.getUsersMarkers(object : MarkerDataSource.LoadCallback {
+                override fun onLoad(markers: MutableList<MarkerModel>) {
+                    markers.forEach {
+                        dataAdapter.emotionsList.add(it)
+                        dataAdapter.notifyItemInserted(dataAdapter.emotionsList.size - 1)
+                    }
+                }
+
+                override fun onError(t: Throwable) {
+                    Log.e("LoadCallback", null, t)
+                }
+            })
+        }
+    }
+}
+
+class EmotionAdapter(private val geocoder: Geocoder,
+                     private val userEmotionFragment: UserEmotionsFragment)
+    : RecyclerView.Adapter<UserEmotionViewHolder>(), CoroutineScope {
+
+    val emotionsList: MutableList<MarkerModel> = mutableListOf()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserEmotionViewHolder {
+        val view = LayoutInflater
+            .from(parent.context)
+            .inflate(R.layout.user_emotion, parent, false)
+        return UserEmotionViewHolder(view)
     }
 
-    class EmotionAdapter : RecyclerView.Adapter<UserEmotionViewHolder>() {
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserEmotionViewHolder {
-            val view = LayoutInflater
-                .from(parent.context)
-                .inflate(R.layout.user_emotion, parent, false)
-            return UserEmotionViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: UserEmotionViewHolder, position: Int) {
-            val emotion = Emotion.values()[position]
-            holder.imageView.setImageResource(emotion.resId)
-            holder.textView.text = emotion.title
-            //if (checkedEmotion != null && checkedEmotion == holder) {
-            //    holder.deleteButton.setImageResource(R.drawable.checked_checkbox)
-            //}
-
-            holder.deleteButton.setOnClickListener {
-                //checkedEmotion?.checkButton?.setImageResource(R.drawable.unchecked_checkbox)
-                //holder.checkButton.setImageResource(R.drawable.checked_checkbox)
-                //checkedEmotion = holder
+    override fun onBindViewHolder(holder: UserEmotionViewHolder, position: Int) {
+        val emotion = emotionsList[position]
+        holder.imageView.setImageResource(emotion.emotion.resId)
+        val longtitude = emotionsList[position].longtitude
+        val latitude = emotionsList[position].latitude
+        try {
+            val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
+            if (addresses != null && addresses.size != 0) {
+                val address = addresses[0]
+                val addressFragments = with(address) {
+                    (0..maxAddressLineIndex).map { getAddressLine(it) }
+                }
+                holder.textView.text = addressFragments.joinToString(separator = " ")
+            } else {
+                throw IOException()
             }
+        } catch (_: IOException) {
+            holder.textView.text = "${longtitude}, ${latitude}"
         }
 
-        override fun getItemCount(): Int {
-            return Emotion.values().size
+        holder.deleteButton.setOnClickListener {
+            launch {
+                userEmotionFragment.userEmotionsViewModel.removeMarker(emotionsList[position],
+                    object : MarkerDataSource.RemoveCallback {
+                        override fun onRemove() {
+                            emotionsList.removeAt(holder.adapterPosition)
+                            notifyItemRemoved(holder.adapterPosition)
+                        }
+
+                        override fun onError(t: Throwable) {
+                            Log.e("RemoveCallback", null, t)
+                        }
+                    })
+            }
+
         }
     }
 
-    class UserEmotionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
-        val textView: TextView = itemView.findViewById(R.id.emotion_address)
-        val deleteButton: ImageButton = itemView.findViewById(R.id.delete)
+    override fun getItemCount(): Int {
+        return emotionsList.size
     }
+}
+
+class UserEmotionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
+    val textView: TextView = itemView.findViewById(R.id.emotion_address)
+    val deleteButton: ImageButton = itemView.findViewById(R.id.delete)
 }
