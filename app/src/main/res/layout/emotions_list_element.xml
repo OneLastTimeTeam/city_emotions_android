@@ -19,6 +19,7 @@
         android:layout_height="48dp"
         android:layout_width="48dp"
         android:src="@drawable/unchecked_checkbox"
+        android:background="@null"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true" />
 
