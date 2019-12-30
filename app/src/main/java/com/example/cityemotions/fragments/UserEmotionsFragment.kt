@@ -59,7 +59,7 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
         recyclerView.adapter = dataAdapter
         launch {
             userEmotionsViewModel.getUsersMarkers(object : MarkerDataSource.LoadCallback {
-                override fun onLoad(markers: MutableList<MarkerModel>) {
+                override fun onLoad(markers: List<MarkerModel>) {
                     markers.forEach {
                         dataAdapter.emotionsList.add(it)
                         dataAdapter.notifyItemInserted(dataAdapter.emotionsList.size - 1)
@@ -99,6 +99,7 @@ class EmotionAdapter(private val geocoder: Geocoder,
         holder.imageView.setImageResource(emotion.emotion.resId)
         val longtitude = emotionsList[position].longtitude
         val latitude = emotionsList[position].latitude
+        // TODO(Xenobyte): вынести геокодинг в отдельный тред ВЕЗДЕ
         try {
             val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
             if (addresses != null && addresses.size != 0) {

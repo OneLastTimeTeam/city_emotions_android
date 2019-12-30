@@ -20,7 +20,7 @@ class GetUsersMarkers(private val dataRepository: MarkerDataSource):
         if (requestValue != null) {
             dataRepository.getUserMarkers(object :
                 MarkerDataSource.LoadCallback {
-                override fun onLoad(markers: MutableList<MarkerModel>) {
+                override fun onLoad(markers: List<MarkerModel>) {
                     val responseValue =
                         ResponseValue(markers)
                     useCaseCallback?.onSuccess(responseValue)
@@ -34,5 +34,5 @@ class GetUsersMarkers(private val dataRepository: MarkerDataSource):
     }
 
     class RequestValue: UseCase.RequestValue
-    class ResponseValue(val markers: MutableList<MarkerModel>): UseCase.ResponseValue
+    class ResponseValue(val markers: List<MarkerModel>): UseCase.ResponseValue
 }

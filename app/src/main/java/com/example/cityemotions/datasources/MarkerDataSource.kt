@@ -41,12 +41,13 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
     fun getMarkers(bounds: LatLngBounds, callback: LoadCallback) {
-        val markersToSend = mutableListOf<MarkerModel>()
-        data.forEach {
-            if (bounds.contains(LatLng(it.latitude, it.longtitude))) {
-                markersToSend.add(it)
-            }
-        }
+//        val markersToSend = mutableListOf<MarkerModel>()
+//        data.forEach {
+//            if (bounds.contains(LatLng(it.latitude, it.longtitude))) {
+//                markersToSend.add(it)
+//            }
+//        }
+        val markersToSend = data.filter { bounds.contains(LatLng(it.latitude, it.longtitude)) }
         callback.onLoad(markersToSend)
     }
 
@@ -82,7 +83,7 @@ class MarkerDataSource {
     }
 
     interface LoadCallback {
-        fun onLoad(markers: MutableList<MarkerModel>)
+        fun onLoad(markers: List<MarkerModel>)
         fun onError(t: Throwable)
     }
 

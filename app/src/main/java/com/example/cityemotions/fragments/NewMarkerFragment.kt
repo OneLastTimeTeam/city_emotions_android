@@ -1,6 +1,7 @@
 package com.example.cityemotions.fragments
 
 import android.os.Bundle
+import android.provider.Settings.System.getString
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -114,7 +115,7 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
         override fun onBindViewHolder(holder: EmotionViewHolder, position: Int) {
             val emotion = Emotion.values()[position]
             holder.imageView.setImageResource(emotion.resId)
-            holder.textView.text = emotion.title
+            holder.textView.text = holder.itemView.context.resources.getString(emotion.titleId)
             if (checkedEmotion != null && checkedEmotion == holder) {
                 holder.checkButton.setImageResource(R.drawable.checked_checkbox)
             }

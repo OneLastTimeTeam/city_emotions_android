@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">CityEmotions</string>
     <string name="title_activity_maps">Map</string>
+
+    <string name="happy_emoji_title">Happy</string>
+    <string name="surprise_emoji_title">Surprise</string>
+    <string name="sadness_emoji_title">Sadness</string>
+    <string name="anger_emoji_title">Anger</string>
+    <string name="disgust_emoji_title">Disgust</string>
+    <string name="contempt_emoji_title">Contempt</string>
+    <string name="fear_emoji_title">Fear</string>
 </resources>

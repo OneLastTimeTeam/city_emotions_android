@@ -162,7 +162,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 setSimpleMarkerOnMap(latLng)
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0f))
             }
-        } catch (_: IOException) {}
+        } catch (geocodeEx: IOException) {
+            Log.e("Geocoding exception", geocodeEx.toString())
+        }
     }
 
     override fun onError(status: Status) {
@@ -191,7 +193,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CHECK_SETTINGS) {
             if (resultCode == Activity.RESULT_OK) {
-                locationUpdateState = true
                 setupLocationUpdates()
             }
         }
@@ -271,7 +272,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         val task = client.checkLocationSettings(builder)
 
         task.addOnSuccessListener {
-            locationUpdateState = true
             setupLocationUpdates()
         }
         task.addOnFailureListener { e ->
@@ -279,7 +279,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 try {
                     e.startResolutionForResult(activity as Activity,
                         REQUEST_CHECK_SETTINGS)
-                } catch (sendEx: IntentSender.SendIntentException) {}
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    Log.e("LocationApi", sendEx.toString())
+                }
             }
         }
     }
@@ -292,6 +294,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             return
         }
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
+        locationUpdateState = true
     }
 
     /**
@@ -302,7 +305,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
         val options = MarkerOptions().position(location)
-        options.title(marker.emotion.title)
+        options.title(getString(marker.emotion.titleId))
             .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
         map.addMarker(options)
     }
@@ -321,7 +324,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map.clear()
         launch {
             mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
-                override fun onLoad(markers: MutableList<MarkerModel>) {
+                override fun onLoad(markers: List<MarkerModel>) {
                     markers.forEach {
                         setCustomMarkerOnMap(it)
                     }
