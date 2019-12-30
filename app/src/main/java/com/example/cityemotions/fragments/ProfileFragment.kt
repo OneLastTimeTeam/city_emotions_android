@@ -10,6 +10,9 @@ import com.example.cityemotions.OnEmotionsClicker
 import com.example.cityemotions.R
 
 
+/**
+ * User`s profile fragment
+ */
 class ProfileFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,

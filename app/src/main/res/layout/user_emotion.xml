@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="68dp">
+    android:layout_height="68dp"
+    android:layout_marginBottom="4dp"
+    android:layout_marginTop="4dp">
 
     <ImageView android:id="@+id/emotion_image"
         android:layout_height="48dp"
@@ -9,10 +11,16 @@
         android:layout_centerVertical="true" />
 
     <TextView android:id="@+id/emotion_address"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_toEndOf="@id/emotion_image"
+        android:layout_toStartOf="@id/delete"
         android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_width="0dp"
+        android:layout_centerVertical="true"
         android:textSize="24sp"
+        android:maxLines="2"
+        android:ellipsize="end"
         />
 
     <ImageButton android:id="@+id/delete"

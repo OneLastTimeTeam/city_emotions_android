@@ -24,15 +24,15 @@ class MarkerDataSource {
 
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
-//    init {
-//        val emotionsArray = Emotion.values()
-//        for (x in 0..100) {
-//            val longtitude = Random.nextFloat() * 360.0 - 180.0
-//            val latitude = Random.nextFloat() * 180.0 - 90.0
-//            val emotion = emotionsArray[emotionsArray.indices.random()]
-//            data.add(MarkerModel(latitude, longtitude, emotion))
-//        }
-//    }
+    init {
+        val emotionsArray = Emotion.values()
+        for (x in 0..10) {
+            val longtitude = Random.nextFloat() * 360.0 - 180.0
+            val latitude = Random.nextFloat() * 180.0 - 90.0
+            val emotion = emotionsArray[emotionsArray.indices.random()]
+            data.add(MarkerModel(latitude, longtitude, emotion))
+        }
+    }
 
     /**
      * GetMarkers from storage and put them in callback
@@ -50,6 +50,11 @@ class MarkerDataSource {
         callback.onLoad(markersToSend)
     }
 
+    /**
+     * Get user`s markers from storage
+     *
+     * @param callback user`s implementation of DataSource.LoadCallback interface
+     */
     fun getUserMarkers(callback: LoadCallback) {
         callback.onLoad(data)
     }
@@ -65,6 +70,12 @@ class MarkerDataSource {
         callback.onAdd()
     }
 
+    /**
+     * Remove marker from storage
+     *
+     * @param marker markerModel to remove
+     * @param callback user`s implementation of DataSource.RemoveCallback interface
+     */
     fun removeMarker(marker: MarkerModel, callback: RemoveCallback) {
         data.remove(marker)
         callback.onRemove()

@@ -21,13 +21,19 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
+
+/**
+ * Fragment for manipulating user emotions: viewing, deleting
+ */
 class UserEmotionsFragment: Fragment(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main
 
+    /** RecycleView adapter */
     private lateinit var dataAdapter: EmotionAdapter
 
+    /** ViewModel class to work with markers storage */
     lateinit var userEmotionsViewModel: UserEmotionsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +74,10 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
     }
 }
 
+
+/**
+ * DataAdapter class implementation for user`s emotions list
+ */
 class EmotionAdapter(private val geocoder: Geocoder,
                      private val userEmotionFragment: UserEmotionsFragment)
     : RecyclerView.Adapter<UserEmotionViewHolder>(), CoroutineScope {
@@ -127,6 +137,9 @@ class EmotionAdapter(private val geocoder: Geocoder,
     }
 }
 
+/**
+ * ViewHolder class implementation for each user`s emotion
+ */
 class UserEmotionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
     val textView: TextView = itemView.findViewById(R.id.emotion_address)

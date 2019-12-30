@@ -22,9 +22,9 @@ class UserEmotionsViewModel(private val removeMarker: RemoveMarker,
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
     /**
-     * Add MarkerModel to storage
+     * Remove MarkerModel from storage
      *
-     * @param marker marker model to add
+     * @param marker marker model to remove
      * @param callback user`s callback implementation
      */
     suspend fun removeMarker(marker: MarkerModel, callback: MarkerDataSource.RemoveCallback) {
@@ -44,6 +44,12 @@ class UserEmotionsViewModel(private val removeMarker: RemoveMarker,
         }
     }
 
+    /**
+     * Get user`s MarkerModel from storage
+     *
+     * @param marker marker model to get
+     * @param callback user`s callback implementation
+     */
     suspend fun getUsersMarkers(callback: MarkerDataSource.LoadCallback) {
         launch {
             val requestValue = GetUsersMarkers.RequestValue()

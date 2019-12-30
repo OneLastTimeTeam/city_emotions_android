@@ -20,6 +20,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
+
+/**
+ * Fragment for selecting and adding a new marker to the map
+ */
 class NewMarkerFragment: Fragment(), CoroutineScope {
     companion object {
         const val SAVED_LONGTITUDE: String = "saved.longtitude"
@@ -38,10 +42,14 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main
 
+    /** RecycleView adapter */
     private lateinit var dataAdapter: EmotionAdapter
+
+    /** Saved position */
     private var longtitude: Double = 0.0
     private var latitude: Double = 0.0
 
+    /** ViewModel class to work with markers storage  */
     private lateinit var newMarkerScreenViewModel: NewMarkerScreenViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,9 +81,8 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
             if (dataAdapter.checkedEmotion == null) {
                 Toast.makeText(activity, "Choose emotion!", Toast.LENGTH_SHORT).show()
             } else {
-                val emotionIdx = dataAdapter.checkedEmotion?.adapterPosition
-                if (emotionIdx != null) {
-                    val marker = MarkerModel(latitude, longtitude, Emotion.values()[emotionIdx])
+                dataAdapter.checkedEmotion?.adapterPosition?.let {
+                    val marker = MarkerModel(latitude, longtitude, Emotion.values()[it])
                     launch {
                         newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
                             override fun onAdd() {
@@ -93,6 +100,7 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
         }
     }
 
+    /** RecycleView adapter class implementation for emotions list */
     class EmotionAdapter: RecyclerView.Adapter<EmotionViewHolder>() {
         var checkedEmotion: EmotionViewHolder? = null
 
@@ -122,6 +130,7 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
         }
     }
 
+    /** ViewHolder class implementation for each emotion */
     class EmotionViewHolder (itemView: View): RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
         val textView: TextView = itemView.findViewById(R.id.emotion_title)

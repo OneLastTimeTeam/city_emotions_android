@@ -166,8 +166,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onError(status: Status) {
-        if (status.statusMessage != null) {
-            Log.e("PlaceSelection", status.statusMessage as String)
+        status.statusMessage?.let {
+            Log.e("PlaceSelection", it)
         }
     }
 
@@ -175,16 +175,15 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         val bounds = map.projection.visibleRegion.latLngBounds
         fetchMarkers(bounds)
         // Restore placed marker
-        val placedMarkerPosition = placedMarker?.position
-        if (placedMarkerPosition != null) {
-            placedMarker = map.addMarker(MarkerOptions().position(placedMarkerPosition))
+        placedMarker?.position?.let {
+            placedMarker = map.addMarker(MarkerOptions().position(it))
         }
     }
 
     override fun onMapLongClick(pos: LatLng?) {
-        if (pos != null) {
+        pos?.let {
             placedMarker?.remove()
-            setSimpleMarkerOnMap(pos)
+            setSimpleMarkerOnMap(it)
         }
     }
 
@@ -240,11 +239,10 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map.isMyLocationEnabled = true
 
         fusedLocationClient.lastLocation.addOnSuccessListener(activity as Activity) { location ->
-            if (location != null) {
+            location?.let {
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                    LatLng(location.latitude,
-                    location.longitude), 18.0f))
-                lastLocation = location
+                    LatLng(it.latitude, it.longitude), 18.0f))
+                lastLocation = it
             }
         }
     }
