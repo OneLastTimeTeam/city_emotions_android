@@ -1,10 +1,15 @@
 package com.example.cityemotions.usecases
 
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+
 
 /**
  * A class providing a single interface for launching UseCases
  */
 class UseCaseHandler {
+    private val executor: Executor = Executors.newSingleThreadExecutor()
+
     /**
      * Function, which starts any UseCase with request and response values and callbacks
      *
@@ -16,8 +21,9 @@ class UseCaseHandler {
         useCase: UseCase<T, R>, values: T, callback: UseCase.UseCaseCallback<R>) {
         useCase.requestValue = values
         useCase.useCaseCallback = callback
-
-        useCase.run()
+        executor.execute {
+            useCase.run()
+        }
     }
 
     companion object {

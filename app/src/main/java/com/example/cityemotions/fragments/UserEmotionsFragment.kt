@@ -1,6 +1,5 @@
 package com.example.cityemotions.fragments
 
-import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,21 +14,12 @@ import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.UserEmotionsViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.IOException
-import kotlin.coroutines.CoroutineContext
 
 
 /**
  * Fragment for manipulating user emotions: viewing, deleting
  */
-class UserEmotionsFragment: Fragment(), CoroutineScope {
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main
-
+class UserEmotionsFragment: Fragment() {
     /** RecycleView adapter */
     private lateinit var dataAdapter: EmotionAdapter
 
@@ -38,7 +28,7 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dataAdapter = EmotionAdapter(Geocoder(activity), this)
+        dataAdapter = EmotionAdapter(this)
         val factory = Injector.provideViewModelFactory()
         userEmotionsViewModel = factory.create(UserEmotionsViewModel::class.java)
     }
@@ -57,20 +47,18 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
         val recyclerView = view.findViewById<RecyclerView>(R.id.user_emotions_list)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = dataAdapter
-        launch {
-            userEmotionsViewModel.getUsersMarkers(object : MarkerDataSource.LoadCallback {
-                override fun onLoad(markers: List<MarkerModel>) {
-                    markers.forEach {
-                        dataAdapter.emotionsList.add(it)
-                        dataAdapter.notifyItemInserted(dataAdapter.emotionsList.size - 1)
-                    }
+        userEmotionsViewModel.getUsersMarkers(object : MarkerDataSource.LoadCallback {
+            override fun onLoad(markers: List<MarkerModel>) {
+                markers.forEach {
+                    dataAdapter.emotionsList.add(it)
+                    dataAdapter.notifyItemInserted(dataAdapter.emotionsList.size - 1)
                 }
+            }
 
-                override fun onError(t: Throwable) {
-                    Log.e("LoadCallback", null, t)
-                }
-            })
-        }
+            override fun onError(t: Throwable) {
+                Log.e("LoadCallback", null, t)
+            }
+        })
     }
 }
 
@@ -78,14 +66,10 @@ class UserEmotionsFragment: Fragment(), CoroutineScope {
 /**
  * DataAdapter class implementation for user`s emotions list
  */
-class EmotionAdapter(private val geocoder: Geocoder,
-                     private val userEmotionFragment: UserEmotionsFragment)
-    : RecyclerView.Adapter<UserEmotionViewHolder>(), CoroutineScope {
+class EmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
+    : RecyclerView.Adapter<UserEmotionViewHolder>() {
 
     val emotionsList: MutableList<MarkerModel> = mutableListOf()
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserEmotionViewHolder {
         val view = LayoutInflater
@@ -97,39 +81,22 @@ class EmotionAdapter(private val geocoder: Geocoder,
     override fun onBindViewHolder(holder: UserEmotionViewHolder, position: Int) {
         val emotion = emotionsList[position]
         holder.imageView.setImageResource(emotion.emotion.resId)
-        val longtitude = emotionsList[position].longtitude
-        val latitude = emotionsList[position].latitude
-        // TODO(Xenobyte): вынести геокодинг в отдельный тред ВЕЗДЕ
-        try {
-            val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
-            if (addresses != null && addresses.size != 0) {
-                val address = addresses[0]
-                val addressFragments = with(address) {
-                    (0..maxAddressLineIndex).map { getAddressLine(it) }
-                }
-                holder.textView.text = addressFragments.joinToString(separator = " ")
-            } else {
-                throw IOException()
-            }
-        } catch (_: IOException) {
-            holder.textView.text = "${longtitude}, ${latitude}"
-        }
+        holder.textView.text = emotion.description
 
         holder.deleteButton.setOnClickListener {
-            launch {
-                userEmotionFragment.userEmotionsViewModel.removeMarker(emotionsList[position],
-                    object : MarkerDataSource.RemoveCallback {
-                        override fun onRemove() {
+            userEmotionFragment.userEmotionsViewModel.removeMarker(emotionsList[position],
+                object : MarkerDataSource.RemoveCallback {
+                    override fun onRemove() {
+                        userEmotionFragment.activity?.runOnUiThread {
                             emotionsList.removeAt(holder.adapterPosition)
                             notifyItemRemoved(holder.adapterPosition)
                         }
+                    }
 
-                        override fun onError(t: Throwable) {
-                            Log.e("RemoveCallback", null, t)
-                        }
-                    })
-            }
-
+                    override fun onError(t: Throwable) {
+                        Log.e("RemoveCallback", null, t)
+                    }
+                })
         }
     }
 
@@ -137,6 +104,7 @@ class EmotionAdapter(private val geocoder: Geocoder,
         return emotionsList.size
     }
 }
+
 
 /**
  * ViewHolder class implementation for each user`s emotion

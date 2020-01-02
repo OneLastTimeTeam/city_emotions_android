@@ -1,7 +1,8 @@
 package com.example.cityemotions.fragments
 
+import android.content.Context
+import android.location.Geocoder
 import android.os.Bundle
-import android.provider.Settings.System.getString
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,16 +17,13 @@ import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.NewMarkerScreenViewModel
 import com.google.android.gms.maps.model.LatLng
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
+import java.io.IOException
 
 
 /**
  * Fragment for selecting and adding a new marker to the map
  */
-class NewMarkerFragment: Fragment(), CoroutineScope {
+class NewMarkerFragment: Fragment() {
     companion object {
         const val SAVED_LONGTITUDE: String = "saved.longtitude"
         const val SAVED_LATITUDE: String = "saved.latitude"
@@ -40,15 +38,15 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
         }
     }
 
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main
-
     /** RecycleView adapter */
     private lateinit var dataAdapter: EmotionAdapter
 
     /** Saved position */
     private var longtitude: Double = 0.0
     private var latitude: Double = 0.0
+
+    /** Geocoder to get location by name */
+    private lateinit var geocoder: Geocoder
 
     /** ViewModel class to work with markers storage  */
     private lateinit var newMarkerScreenViewModel: NewMarkerScreenViewModel
@@ -58,6 +56,7 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
         dataAdapter = EmotionAdapter()
         val factory = Injector.provideViewModelFactory()
         newMarkerScreenViewModel = factory.create(NewMarkerScreenViewModel::class.java)
+        geocoder = Geocoder(activity as Context)
     }
 
     override fun onCreateView(
@@ -83,19 +82,35 @@ class NewMarkerFragment: Fragment(), CoroutineScope {
                 Toast.makeText(activity, "Choose emotion!", Toast.LENGTH_SHORT).show()
             } else {
                 dataAdapter.checkedEmotion?.adapterPosition?.let {
-                    val marker = MarkerModel(latitude, longtitude, Emotion.values()[it])
-                    launch {
-                        newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
-                            override fun onAdd() {
+                    var description: String
+                    try {
+                        val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
+                        if (addresses != null && addresses.size != 0) {
+                            val address = addresses[0]
+                            val addressFragments = with(address) {
+                                (0..maxAddressLineIndex).map { getAddressLine(it) }
+                            }
+                            description = addressFragments.joinToString(separator = " ")
+                        } else {
+                            throw IOException()
+                        }
+                    } catch (_: IOException) {
+                        description = "${longtitude}, ${latitude}"
+                    }
+                    val marker = MarkerModel(latitude, longtitude, Emotion.values()[it], description)
+
+                    newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
+                        override fun onAdd() {
+                            activity?.runOnUiThread {
                                 activity?.onBackPressed()
                             }
+                        }
 
-                            override fun onError(t: Throwable) {
-                                Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
-                                    .show()
-                            }
-                        })
-                    }
+                        override fun onError(t: Throwable) {
+                            Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
+                                .show()
+                        }
+                    })
                 }
             }
         }

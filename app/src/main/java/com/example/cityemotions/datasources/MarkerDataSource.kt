@@ -24,15 +24,6 @@ class MarkerDataSource {
 
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
-    init {
-        val emotionsArray = Emotion.values()
-        for (x in 0..10) {
-            val longtitude = Random.nextFloat() * 360.0 - 180.0
-            val latitude = Random.nextFloat() * 180.0 - 90.0
-            val emotion = emotionsArray[emotionsArray.indices.random()]
-            data.add(MarkerModel(latitude, longtitude, emotion))
-        }
-    }
 
     /**
      * GetMarkers from storage and put them in callback
@@ -41,12 +32,6 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
     fun getMarkers(bounds: LatLngBounds, callback: LoadCallback) {
-//        val markersToSend = mutableListOf<MarkerModel>()
-//        data.forEach {
-//            if (bounds.contains(LatLng(it.latitude, it.longtitude))) {
-//                markersToSend.add(it)
-//            }
-//        }
         val markersToSend = data.filter { bounds.contains(LatLng(it.latitude, it.longtitude)) }
         callback.onLoad(markersToSend)
     }
