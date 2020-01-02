@@ -1,10 +1,12 @@
 package com.example.cityemotions.datasources
 
-import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
-import kotlin.random.Random
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
 
 /**
@@ -13,6 +15,7 @@ import kotlin.random.Random
 class MarkerDataSource {
     companion object {
         private var instance: MarkerDataSource? = null
+        private val client = OkHttpClient()
 
         fun getInstance(): MarkerDataSource {
             if (instance == null) {
@@ -20,10 +23,25 @@ class MarkerDataSource {
             }
             return instance!!
         }
+
+        private val URL = "http://134.209.18.0:7777"
+        private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
+
+        private val ADD_PATH = "/add_marker"
     }
 
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
+
+    fun makeRequest(path: String, body: String?): Request {
+        val request = Request.Builder().url(URL + path)
+        if (body != null) {
+            val requestBody = body.toRequestBody(JSON)
+            request.method("POST", requestBody)
+        }
+
+        return request.build()
+    }
 
     /**
      * GetMarkers from storage and put them in callback
@@ -53,7 +71,26 @@ class MarkerDataSource {
      */
     fun addMarker(marker: MarkerModel, callback: AddCallback) {
         data.add(marker)
-        callback.onAdd()
+
+        val body = """{
+            "emotionId":${marker.emotion.dbId},
+            "latitude":${marker.latitude},
+            "longtitude":${marker.longtitude},
+            "description":"${marker.description}"
+        }
+        """.trimIndent()
+
+        val request = makeRequest(ADD_PATH, body)
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                callback.onAdd()
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e)
+            }
+        })
     }
 
     /**

@@ -3,6 +3,7 @@ package com.example.cityemotions.fragments
 import android.content.Context
 import android.location.Geocoder
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -107,8 +108,11 @@ class NewMarkerFragment: Fragment() {
                         }
 
                         override fun onError(t: Throwable) {
-                            Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
-                                .show()
+                            activity?.runOnUiThread {
+                                Log.e("APICALL", null, t)
+                                Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
+                                    .show()
+                            }
                         }
                     })
                 }
