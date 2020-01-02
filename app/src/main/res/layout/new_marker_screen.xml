@@ -14,11 +14,15 @@
 
     <Button
         android:id="@+id/add_button"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="5dp"
-        android:text="Добавить" />
+        android:layout_margin="5dp"
+        android:background="@drawable/button"
+        android:textSize="24sp"
+        android:textColor="@color/lightGrey"
+        android:text="Add"
+        android:textAllCaps="false"/>
 
 </RelativeLayout>
