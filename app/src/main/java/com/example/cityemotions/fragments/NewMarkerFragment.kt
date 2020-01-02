@@ -134,11 +134,15 @@ class NewMarkerFragment: Fragment() {
             if (checkedEmotion != null && checkedEmotion == holder) {
                 holder.checkButton.setImageResource(R.drawable.checked_checkbox)
             }
-            holder.itemView.setOnClickListener {
+
+            val clickListener = View.OnClickListener {
                 checkedEmotion?.checkButton?.setImageResource(R.drawable.unchecked_checkbox)
                 holder.checkButton.setImageResource(R.drawable.checked_checkbox)
                 checkedEmotion = holder
             }
+
+            holder.itemView.setOnClickListener(clickListener)
+            holder.checkButton.setOnClickListener(clickListener)
         }
 
         override fun getItemCount(): Int {
