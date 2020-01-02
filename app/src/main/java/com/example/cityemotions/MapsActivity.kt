@@ -2,11 +2,7 @@ package com.example.cityemotions
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.example.cityemotions.fragments.MapScreenFragment
-import com.example.cityemotions.fragments.NewMarkerFragment
-import com.example.cityemotions.fragments.ProfileFragment
-import com.example.cityemotions.fragments.UserEmotionsFragment
-import com.example.cityemotions.modelviews.UserEmotionsViewModel
+import com.example.cityemotions.fragments.*
 import com.google.android.gms.maps.model.LatLng
 
 
@@ -22,15 +18,20 @@ interface  OnEmotionsClicker {
     fun onEmotionsClicked()
 }
 
+interface OnLoginClicker {
+    fun onLoginClicked()
+}
 
-class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEmotionsClicker {
+
+class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEmotionsClicker,
+    OnLoginClicker{
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, MapScreenFragment())
+                .replace(R.id.fragment_container, LoginFragment())
                 .commit()
         }
     }
@@ -52,6 +53,13 @@ class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEm
     override fun onEmotionsClicked() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, UserEmotionsFragment())
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun onLoginClicked() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, MapScreenFragment())
             .addToBackStack(null)
             .commit()
     }

@@ -84,7 +84,11 @@ class MarkerDataSource {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onResponse(call: Call, response: Response) {
-                callback.onAdd()
+                if (response.code != 200) {
+                    callback.onError(Throwable("Internal Server Error"))
+                } else {
+                    callback.onAdd()
+                }
             }
 
             override fun onFailure(call: Call, e: IOException) {
