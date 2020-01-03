@@ -3,11 +3,40 @@ package com.example.cityemotions.datasources
 import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.gson.Gson
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import java.io.IOException
+
+/**
+ * Marker JSON implementation
+ */
+data class MarkerRequest(
+    val emotionId: Int,
+    val latitude: Double,
+    val longtitude: Double,
+    val description: String
+)
+
+
+/**
+ * LatLng JSON implementation
+ */
+data class LatLngRequest(
+    val latitude: Double,
+    val longtitude: Double
+)
+
+
+/**
+ * Bounds JSON implementation
+ */
+data class BoundsRequest(
+    val southwest: LatLngRequest,
+    val northeast: LatLngRequest
+)
 
 
 /**
@@ -35,6 +64,14 @@ class MarkerDataSource {
     // Temporary solution
     private var data: MutableList<MarkerModel> = mutableListOf()
 
+    /**
+     * GetMarkers from storage and put them in callback
+     *
+     * @param path server path
+     * @param body JSON request body
+     *
+     * @return Request objects
+     */
     fun makeRequest(path: String, body: String?): Request {
         val request = Request.Builder().url(URL + path)
         if (body != null) {
@@ -52,37 +89,40 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
     fun getMarkers(bounds: LatLngBounds, callback: LoadCallback) {
-        val body = """{
-            "southwest": {
-                "latitude":${bounds.southwest.latitude},
-                "longtitude":${bounds.southwest.longitude}
-            },
-            "northeast": {
-                "latitude":${bounds.northeast.latitude},
-                "longtitude":${bounds.northeast.longitude}
-            }
-        }
-        """.trimIndent()
+        val boundsRequest = BoundsRequest(
+            southwest = LatLngRequest(
+                latitude = bounds.southwest.latitude,
+                longtitude = bounds.southwest.longitude
+            ),
+            northeast = LatLngRequest(
+                latitude = bounds.northeast.latitude,
+                longtitude = bounds.northeast.longitude
+            )
+        )
+        val body = Gson().toJson(boundsRequest)
 
         val request = makeRequest(GET_ALL_PATH, body)
         client.newCall(request).enqueue(object : Callback {
             override fun onResponse(call: Call, response: Response) {
                 if (response.code != 200) {
                     callback.onError(Throwable("Internal Server Error"))
-                } else {
-                    response.body?.let {
-                        val markers = mutableListOf<MarkerModel>()
-                        val stringBody = it.string()
-                        val jsonArray = JSONArray(stringBody)
-                        for (i in 0 until jsonArray.length()) {
-                            val markerJson = jsonArray.getJSONObject(i)
-                            markers.add(MarkerModel(markerJson.getDouble("latitude"),
-                                markerJson.getDouble("longtitude"),
-                                Emotion.values()[markerJson.getInt("emotionId")],
-                                markerJson.getString("description")))
-                        }
-                        callback.onLoad(markers)
+                    return
+                }
+                response.body?.let {
+                    val markers = mutableListOf<MarkerModel>()
+                    val stringBody = it.string()
+                    val jsonArray = JSONArray(stringBody)
+                    for (i in 0 until jsonArray.length()) {
+                        val markerJson = jsonArray.getJSONObject(i)
+                        markers.add(MarkerModel(
+                            dbId = markerJson.getInt("id"),
+                            latitude = markerJson.getDouble("latitude"),
+                            longtitude = markerJson.getDouble("longtitude"),
+                            emotion = Emotion.values()[markerJson.getInt("emotionId")],
+                            description = markerJson.getString("description")
+                        ))
                     }
+                    callback.onLoad(markers)
                 }
             }
 
@@ -108,14 +148,14 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.AddCallback interface
      */
     fun addMarker(marker: MarkerModel, callback: AddCallback) {
-        val body = """{
-            "emotionId":${marker.emotion.dbId},
-            "latitude":${marker.latitude},
-            "longtitude":${marker.longtitude},
-            "description":"${marker.description}"
-        }
-        """.trimIndent()
+        val markerRequest = MarkerRequest(
+            emotionId = marker.emotion.dbId,
+            latitude = marker.latitude,
+            longtitude = marker.longtitude,
+            description = marker.description
+        )
 
+        val body = Gson().toJson(markerRequest)
         val request = makeRequest(ADD_PATH, body)
 
         client.newCall(request).enqueue(object : Callback {

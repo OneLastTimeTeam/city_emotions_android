@@ -28,7 +28,7 @@ enum class Emotion(val dbId: Int, val resId: Int, val titleId: Int) {
  * @property longtitude marker`s longtitude
  * @property emotion marker`s emotion
  */
-data class MarkerModel(val latitude: Double, val longtitude: Double,
+data class MarkerModel(val dbId: Int, val latitude: Double, val longtitude: Double,
                        val emotion: Emotion, val description: String)
 
 /**
