@@ -98,7 +98,7 @@ class NewMarkerFragment: Fragment() {
                     } catch (_: IOException) {
                         description = "${longtitude}, ${latitude}"
                     }
-                    val marker = MarkerModel(latitude, longtitude, Emotion.values()[it], description)
+                    val marker = MarkerModel(0, latitude, longtitude, Emotion.values()[it], description)
 
                     newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
                         override fun onAdd() {
