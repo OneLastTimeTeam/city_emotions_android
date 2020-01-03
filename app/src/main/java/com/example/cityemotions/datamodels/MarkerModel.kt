@@ -20,7 +20,6 @@ enum class Emotion(val dbId: Int, val resId: Int, val titleId: Int) {
 }
 
 
-// TODO(Xenobyte): добавить юзера и текстовое описание геолокации
 /**
  * MarkerModel data class
  *
@@ -31,14 +30,3 @@ enum class Emotion(val dbId: Int, val resId: Int, val titleId: Int) {
 data class MarkerModel(val dbId: Int, val latitude: Double, val longtitude: Double,
                        val emotion: Emotion, val description: String, val userId: String)
 
-/**
-
- CREATE TABLE emotions (
-    id bigserial primary key,
-    emotion_id integer NOT NULL,
-    latitude real NOT NULL,
-    longtitude real NOT NULL,
-    description text NOT NULL
- );
-
- */

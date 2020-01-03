@@ -99,6 +99,11 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
         }
     }
 
+    /**
+     * Get user`s MarkerModel from storage
+     *
+     * @param task sign-in Google API task
+     */
     private fun handleSignIn(task: Task<GoogleSignInAccount>) {
         try {
             val userAccount = task.getResult(ApiException::class.java)
@@ -111,6 +116,9 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
         }
     }
 
+    /**
+     * Redirecting to map fragment
+     */
     private fun logIn() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, MapScreenFragment())
@@ -127,6 +135,9 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
             }
     }
 
+    /**
+     * User ID string getter
+     */
     fun getUserId(): String {
         return account.id!!
     }

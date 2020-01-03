@@ -22,14 +22,14 @@ import com.example.cityemotions.modelviews.UserEmotionsViewModel
  */
 class UserEmotionsFragment: Fragment() {
     /** RecycleView adapter */
-    private lateinit var dataAdapter: EmotionAdapter
+    private lateinit var dataAdapter: UserEmotionAdapter
 
     /** ViewModel class to work with markers storage */
     lateinit var userEmotionsViewModel: UserEmotionsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dataAdapter = EmotionAdapter(this)
+        dataAdapter = UserEmotionAdapter(this)
         val factory = Injector.provideViewModelFactory()
         userEmotionsViewModel = factory.create(UserEmotionsViewModel::class.java)
     }
@@ -70,7 +70,7 @@ class UserEmotionsFragment: Fragment() {
 /**
  * DataAdapter class implementation for user`s emotions list
  */
-class EmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
+class UserEmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
     : RecyclerView.Adapter<UserEmotionViewHolder>() {
 
     val markersList: MutableList<MarkerModel> = mutableListOf()

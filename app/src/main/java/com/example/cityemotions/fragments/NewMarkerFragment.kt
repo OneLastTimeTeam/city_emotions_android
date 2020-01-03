@@ -128,45 +128,45 @@ class NewMarkerFragment: Fragment() {
             }
         }
     }
+}
 
-    /** RecycleView adapter class implementation for emotions list */
-    class EmotionAdapter: RecyclerView.Adapter<EmotionViewHolder>() {
-        var checkedEmotion: EmotionViewHolder? = null
+/** RecycleView adapter class implementation for emotions list */
+class EmotionAdapter: RecyclerView.Adapter<EmotionViewHolder>() {
+    var checkedEmotion: EmotionViewHolder? = null
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmotionViewHolder {
-            val view = LayoutInflater
-                .from(parent.context)
-                .inflate(R.layout.emotions_list_element, parent, false)
-            return EmotionViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: EmotionViewHolder, position: Int) {
-            val emotion = Emotion.values()[position]
-            holder.imageView.setImageResource(emotion.resId)
-            holder.textView.text = holder.itemView.context.resources.getString(emotion.titleId)
-            if (checkedEmotion != null && checkedEmotion == holder) {
-                holder.checkButton.setImageResource(R.drawable.checked_checkbox)
-            }
-
-            val clickListener = View.OnClickListener {
-                checkedEmotion?.checkButton?.setImageResource(R.drawable.unchecked_checkbox)
-                holder.checkButton.setImageResource(R.drawable.checked_checkbox)
-                checkedEmotion = holder
-            }
-
-            holder.itemView.setOnClickListener(clickListener)
-            holder.checkButton.setOnClickListener(clickListener)
-        }
-
-        override fun getItemCount(): Int {
-            return Emotion.values().size
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmotionViewHolder {
+        val view = LayoutInflater
+            .from(parent.context)
+            .inflate(R.layout.emotions_list_element, parent, false)
+        return EmotionViewHolder(view)
     }
 
-    /** ViewHolder class implementation for each emotion */
-    class EmotionViewHolder (itemView: View): RecyclerView.ViewHolder(itemView) {
-        val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
-        val textView: TextView = itemView.findViewById(R.id.emotion_title)
-        val checkButton: ImageButton = itemView.findViewById(R.id.checkbox)
+    override fun onBindViewHolder(holder: EmotionViewHolder, position: Int) {
+        val emotion = Emotion.values()[position]
+        holder.imageView.setImageResource(emotion.resId)
+        holder.textView.text = holder.itemView.context.resources.getString(emotion.titleId)
+        if (checkedEmotion != null && checkedEmotion == holder) {
+            holder.checkButton.setImageResource(R.drawable.checked_checkbox)
+        }
+
+        val clickListener = View.OnClickListener {
+            checkedEmotion?.checkButton?.setImageResource(R.drawable.unchecked_checkbox)
+            holder.checkButton.setImageResource(R.drawable.checked_checkbox)
+            checkedEmotion = holder
+        }
+
+        holder.itemView.setOnClickListener(clickListener)
+        holder.checkButton.setOnClickListener(clickListener)
     }
+
+    override fun getItemCount(): Int {
+        return Emotion.values().size
+    }
+}
+
+/** ViewHolder class implementation for each emotion */
+class EmotionViewHolder (itemView: View): RecyclerView.ViewHolder(itemView) {
+    val imageView: ImageView = itemView.findViewById(R.id.emotion_image)
+    val textView: TextView = itemView.findViewById(R.id.emotion_title)
+    val checkButton: ImageButton = itemView.findViewById(R.id.checkbox)
 }
