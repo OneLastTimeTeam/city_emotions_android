@@ -14,10 +14,12 @@ import java.io.IOException
  * Marker JSON implementation
  */
 data class MarkerRequest(
+    val id: Int,
     val emotionId: Int,
     val latitude: Double,
     val longtitude: Double,
-    val description: String
+    val description: String,
+    val userId: String
 )
 
 
@@ -36,6 +38,11 @@ data class LatLngRequest(
 data class BoundsRequest(
     val southwest: LatLngRequest,
     val northeast: LatLngRequest
+)
+
+
+data class UserIdRequest(
+    val userId: String
 )
 
 
@@ -59,6 +66,8 @@ class MarkerDataSource {
 
         private val ADD_PATH = "/add_marker"
         private val GET_ALL_PATH = "/all_markers_from_coords"
+        private val GET_USERS_MARKERS = "/users_markers"
+        private val REMOVE_PATH = "/remove_marker"
     }
 
     // Temporary solution
@@ -72,7 +81,7 @@ class MarkerDataSource {
      *
      * @return Request objects
      */
-    fun makeRequest(path: String, body: String?): Request {
+    private fun makeRequest(path: String, body: String?): Request {
         val request = Request.Builder().url(URL + path)
         if (body != null) {
             val requestBody = body.toRequestBody(JSON)
@@ -80,6 +89,36 @@ class MarkerDataSource {
         }
 
         return request.build()
+    }
+
+    /**
+     * Make marker list from JSON response body
+     *
+     * @param response Response object
+     *
+     * @return MutableList of MarkerModels
+     */
+    private fun getMarkersFromBody(response: Response): MutableList<MarkerModel> {
+        response.body?.let {
+            val markers = mutableListOf<MarkerModel>()
+            val stringBody = it.string()
+            val jsonArray = JSONArray(stringBody)
+            for (i in 0 until jsonArray.length()) {
+                val markerJson = jsonArray.getJSONObject(i)
+                markers.add(
+                    MarkerModel(
+                        dbId = markerJson.getInt("id"),
+                        latitude = markerJson.getDouble("latitude"),
+                        longtitude = markerJson.getDouble("longtitude"),
+                        emotion = Emotion.values()[markerJson.getInt("emotionId")],
+                        description = markerJson.getString("description"),
+                        userId = markerJson.getString("userId")
+                    )
+                )
+            }
+            return markers
+        }
+        return mutableListOf()
     }
 
     /**
@@ -106,22 +145,8 @@ class MarkerDataSource {
             override fun onResponse(call: Call, response: Response) {
                 if (response.code != 200) {
                     callback.onError(Throwable("Internal Server Error"))
-                    return
-                }
-                response.body?.let {
-                    val markers = mutableListOf<MarkerModel>()
-                    val stringBody = it.string()
-                    val jsonArray = JSONArray(stringBody)
-                    for (i in 0 until jsonArray.length()) {
-                        val markerJson = jsonArray.getJSONObject(i)
-                        markers.add(MarkerModel(
-                            dbId = markerJson.getInt("id"),
-                            latitude = markerJson.getDouble("latitude"),
-                            longtitude = markerJson.getDouble("longtitude"),
-                            emotion = Emotion.values()[markerJson.getInt("emotionId")],
-                            description = markerJson.getString("description")
-                        ))
-                    }
+                } else {
+                    val markers = getMarkersFromBody(response)
                     callback.onLoad(markers)
                 }
             }
@@ -135,10 +160,30 @@ class MarkerDataSource {
     /**
      * Get user`s markers from storage
      *
+     * @param userId user identificator string
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
-    fun getUserMarkers(callback: LoadCallback) {
-        callback.onLoad(data)
+    fun getUserMarkers(userId: String, callback: LoadCallback) {
+        val userIdRequest = UserIdRequest(
+            userId = userId
+        )
+
+        val body = Gson().toJson(userIdRequest)
+        val request = makeRequest(GET_USERS_MARKERS, body)
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code != 200) {
+                    callback.onError(Throwable("Internal Server Error"))
+                } else {
+                    val markers = getMarkersFromBody(response)
+                    callback.onLoad(markers)
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e)
+            }
+        })
     }
 
     /**
@@ -149,10 +194,12 @@ class MarkerDataSource {
      */
     fun addMarker(marker: MarkerModel, callback: AddCallback) {
         val markerRequest = MarkerRequest(
+            id = marker.dbId,
             emotionId = marker.emotion.dbId,
             latitude = marker.latitude,
             longtitude = marker.longtitude,
-            description = marker.description
+            description = marker.description,
+            userId = marker.userId
         )
 
         val body = Gson().toJson(markerRequest)
@@ -180,8 +227,30 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.RemoveCallback interface
      */
     fun removeMarker(marker: MarkerModel, callback: RemoveCallback) {
-        data.remove(marker)
-        callback.onRemove()
+        val markerRequest = MarkerRequest(
+            id = marker.dbId,
+            emotionId = marker.emotion.dbId,
+            latitude = marker.latitude,
+            longtitude = marker.longtitude,
+            description = marker.description,
+            userId = marker.userId
+        )
+
+        val body = Gson().toJson(markerRequest)
+        val request = makeRequest(REMOVE_PATH, body)
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code != 200) {
+                    callback.onError(Throwable("Internal Server Error"))
+                } else {
+                    callback.onRemove()
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e)
+            }
+        })
     }
 
     interface LoadCallback {

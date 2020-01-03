@@ -18,7 +18,7 @@ class GetUsersMarkers(private val dataRepository: MarkerDataSource):
      */
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
-            dataRepository.getUserMarkers(object :
+            dataRepository.getUserMarkers(requestValue.userId, object :
                 MarkerDataSource.LoadCallback {
                 override fun onLoad(markers: List<MarkerModel>) {
                     val responseValue =
@@ -33,6 +33,6 @@ class GetUsersMarkers(private val dataRepository: MarkerDataSource):
         }
     }
 
-    class RequestValue: UseCase.RequestValue
+    class RequestValue(val userId: String): UseCase.RequestValue
     class ResponseValue(val markers: List<MarkerModel>): UseCase.ResponseValue
 }

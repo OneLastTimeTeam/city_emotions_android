@@ -43,8 +43,8 @@ class UserEmotionsViewModel(private val removeMarker: RemoveMarker,
      * @param marker marker model to get
      * @param callback user`s callback implementation
      */
-     fun getUsersMarkers(callback: MarkerDataSource.LoadCallback) {
-        val requestValue = GetUsersMarkers.RequestValue()
+     fun getUsersMarkers(userId:String, callback: MarkerDataSource.LoadCallback) {
+        val requestValue = GetUsersMarkers.RequestValue(userId)
 
         useCaseHandler.execute(getUsersMarkers, requestValue, object :
             UseCase.UseCaseCallback<GetUsersMarkers.ResponseValue> {

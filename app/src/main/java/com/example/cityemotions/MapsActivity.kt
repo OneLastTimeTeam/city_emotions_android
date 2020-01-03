@@ -40,6 +40,7 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
 
     private val RC_SIGN_IN = 24
     private lateinit var client: GoogleSignInClient
+    private lateinit var account: GoogleSignInAccount
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,8 +58,9 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
 
     override fun onStart() {
         super.onStart()
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null) {
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(this)
+        if (lastAccount != null) {
+            account = lastAccount
             logIn()
         }
     }
@@ -99,8 +101,9 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
 
     private fun handleSignIn(task: Task<GoogleSignInAccount>) {
         try {
-            val account = task.getResult(ApiException::class.java)
-            if (account != null) {
+            val userAccount = task.getResult(ApiException::class.java)
+            if (userAccount != null) {
+                account = userAccount
                 logIn()
             }
         } catch (t: ApiException) {
@@ -122,5 +125,9 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
                 startActivity(intent)
                 finish()
             }
+    }
+
+    fun getUserId(): String {
+        return account.id!!
     }
 }

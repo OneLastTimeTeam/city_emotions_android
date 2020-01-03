@@ -9,6 +9,10 @@ import androidx.fragment.app.Fragment
 import com.example.cityemotions.OnSignInListener
 import com.example.cityemotions.R
 
+
+/**
+ * Google OAuth fragment
+ */
 class LoginFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,

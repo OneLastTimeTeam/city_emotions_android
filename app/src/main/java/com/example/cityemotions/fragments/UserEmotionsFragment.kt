@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cityemotions.Injector
+import com.example.cityemotions.MapsActivity
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
@@ -47,11 +48,14 @@ class UserEmotionsFragment: Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.user_emotions_list)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = dataAdapter
-        userEmotionsViewModel.getUsersMarkers(object : MarkerDataSource.LoadCallback {
+        val userId = (activity as MapsActivity).getUserId()
+        userEmotionsViewModel.getUsersMarkers(userId, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: List<MarkerModel>) {
-                markers.forEach {
-                    dataAdapter.emotionsList.add(it)
-                    dataAdapter.notifyItemInserted(dataAdapter.emotionsList.size - 1)
+                activity?.runOnUiThread {
+                    markers.forEach {
+                        dataAdapter.markersList.add(it)
+                        dataAdapter.notifyItemInserted(dataAdapter.markersList.size - 1)
+                    }
                 }
             }
 
@@ -69,7 +73,7 @@ class UserEmotionsFragment: Fragment() {
 class EmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
     : RecyclerView.Adapter<UserEmotionViewHolder>() {
 
-    val emotionsList: MutableList<MarkerModel> = mutableListOf()
+    val markersList: MutableList<MarkerModel> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserEmotionViewHolder {
         val view = LayoutInflater
@@ -79,17 +83,18 @@ class EmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
     }
 
     override fun onBindViewHolder(holder: UserEmotionViewHolder, position: Int) {
-        val emotion = emotionsList[position]
-        holder.imageView.setImageResource(emotion.emotion.resId)
-        holder.textView.text = emotion.description
-
+        val marker = markersList[position]
+        holder.imageView.setImageResource(marker.emotion.resId)
+        holder.textView.text = marker.description
+        holder.deleteButton.tag = marker.dbId
         holder.deleteButton.setOnClickListener {
-            userEmotionFragment.userEmotionsViewModel.removeMarker(emotionsList[position],
+            val holderPosition = markersList.indexOfFirst { markerModel -> markerModel.dbId == it.tag }
+            userEmotionFragment.userEmotionsViewModel.removeMarker(markersList[holderPosition],
                 object : MarkerDataSource.RemoveCallback {
                     override fun onRemove() {
                         userEmotionFragment.activity?.runOnUiThread {
-                            emotionsList.removeAt(holder.adapterPosition)
-                            notifyItemRemoved(holder.adapterPosition)
+                            markersList.removeAt(holderPosition)
+                            notifyItemRemoved(holderPosition)
                         }
                     }
 
@@ -101,7 +106,7 @@ class EmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
     }
 
     override fun getItemCount(): Int {
-        return emotionsList.size
+        return markersList.size
     }
 }
 

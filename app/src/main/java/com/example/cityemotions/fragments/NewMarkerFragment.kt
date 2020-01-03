@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cityemotions.Injector
+import com.example.cityemotions.MapsActivity
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
@@ -98,7 +99,15 @@ class NewMarkerFragment: Fragment() {
                     } catch (_: IOException) {
                         description = "${longtitude}, ${latitude}"
                     }
-                    val marker = MarkerModel(0, latitude, longtitude, Emotion.values()[it], description)
+                    val userId = (activity as MapsActivity).getUserId()
+                    val marker = MarkerModel(
+                        dbId = 0,
+                        latitude = latitude,
+                        longtitude = longtitude,
+                        emotion = Emotion.values()[it],
+                        description = description,
+                        userId = userId
+                    )
 
                     newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
                         override fun onAdd() {
