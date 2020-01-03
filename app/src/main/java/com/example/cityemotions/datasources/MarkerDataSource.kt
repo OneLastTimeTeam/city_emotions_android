@@ -1,11 +1,12 @@
 package com.example.cityemotions.datasources
 
+import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import java.io.IOException
 
 
@@ -24,10 +25,11 @@ class MarkerDataSource {
             return instance!!
         }
 
-        private val URL = "http://134.209.18.0:7777"
+        private val URL = "http://79.143.31.234:80"
         private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
 
         private val ADD_PATH = "/add_marker"
+        private val GET_ALL_PATH = "/all_markers_from_coords"
     }
 
     // Temporary solution
@@ -50,8 +52,44 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.LoadCallback interface
      */
     fun getMarkers(bounds: LatLngBounds, callback: LoadCallback) {
-        val markersToSend = data.filter { bounds.contains(LatLng(it.latitude, it.longtitude)) }
-        callback.onLoad(markersToSend)
+        val body = """{
+            "southwest": {
+                "latitude":${bounds.southwest.latitude},
+                "longtitude":${bounds.southwest.longitude}
+            },
+            "northeast": {
+                "latitude":${bounds.northeast.latitude},
+                "longtitude":${bounds.northeast.longitude}
+            }
+        }
+        """.trimIndent()
+
+        val request = makeRequest(GET_ALL_PATH, body)
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code != 200) {
+                    callback.onError(Throwable("Internal Server Error"))
+                } else {
+                    response.body?.let {
+                        val markers = mutableListOf<MarkerModel>()
+                        val stringBody = it.string()
+                        val jsonArray = JSONArray(stringBody)
+                        for (i in 0 until jsonArray.length()) {
+                            val markerJson = jsonArray.getJSONObject(i)
+                            markers.add(MarkerModel(markerJson.getDouble("latitude"),
+                                markerJson.getDouble("longtitude"),
+                                Emotion.values()[markerJson.getInt("emotionId")],
+                                markerJson.getString("description")))
+                        }
+                        callback.onLoad(markers)
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e)
+            }
+        })
     }
 
     /**
@@ -70,8 +108,6 @@ class MarkerDataSource {
      * @param callback user`s implementation of DataSource.AddCallback interface
      */
     fun addMarker(marker: MarkerModel, callback: AddCallback) {
-        data.add(marker)
-
         val body = """{
             "emotionId":${marker.emotion.dbId},
             "latitude":${marker.latitude},

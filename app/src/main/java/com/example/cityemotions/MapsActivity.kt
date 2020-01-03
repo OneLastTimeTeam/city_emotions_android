@@ -1,7 +1,9 @@
 package com.example.cityemotions
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.StrictMode
 import com.example.cityemotions.fragments.*
 import com.google.android.gms.maps.model.LatLng
 
