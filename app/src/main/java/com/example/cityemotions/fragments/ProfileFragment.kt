@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.OnEmotionsClicker
+import com.example.cityemotions.OnLogOutListener
 import com.example.cityemotions.R
 
 
@@ -26,6 +27,10 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<Button>(R.id.user_emotions_button).setOnClickListener {
             (activity as OnEmotionsClicker).onEmotionsClicked()
+        }
+
+        view.findViewById<Button>(R.id.logout_button).setOnClickListener {
+            (activity as OnLogOutListener).onLogOut()
         }
     }
 }

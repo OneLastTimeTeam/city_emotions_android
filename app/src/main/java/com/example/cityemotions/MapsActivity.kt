@@ -14,7 +14,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 
 
-interface OnSelectProfile {
+interface OnSelectProfileListener {
     fun onProfileSelected()
 }
 
@@ -26,13 +26,17 @@ interface  OnEmotionsClicker {
     fun onEmotionsClicked()
 }
 
-interface OnSignInClicker {
+interface OnSignInListener {
     fun onSignIn()
 }
 
+interface OnLogOutListener {
+    fun onLogOut()
+}
 
-class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEmotionsClicker,
-    OnSignInClicker {
+
+class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClicker,
+    OnEmotionsClicker, OnSignInListener, OnLogOutListener {
 
     private val RC_SIGN_IN = 24
     private lateinit var client: GoogleSignInClient
@@ -41,7 +45,6 @@ class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEm
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         client = GoogleSignIn.getClient(this, gso)
@@ -109,5 +112,15 @@ class MapsActivity : AppCompatActivity(), OnSelectProfile, OnMarkerClicker, OnEm
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, MapScreenFragment())
             .commit()
+    }
+
+    override fun onLogOut() {
+        client.signOut()
+            .addOnCompleteListener {
+                val intent = Intent(this, MapsActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                finish()
+            }
     }
 }

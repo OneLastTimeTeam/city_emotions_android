@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
-import com.example.cityemotions.OnSignInClicker
+import com.example.cityemotions.OnSignInListener
 import com.example.cityemotions.R
 
 class LoginFragment : Fragment() {
@@ -21,7 +21,7 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<Button>(R.id.login_button).setOnClickListener {
-            (activity as OnSignInClicker).onSignIn()
+            (activity as OnSignInListener).onSignIn()
         }
     }
 }
