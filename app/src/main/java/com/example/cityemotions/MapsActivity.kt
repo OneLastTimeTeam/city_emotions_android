@@ -18,6 +18,10 @@ interface OnSelectProfileListener {
     fun onProfileSelected()
 }
 
+interface OnSelectFilterListener {
+    fun onFilterSelected()
+}
+
 interface OnMarkerClicker {
     fun onMarkerClicked(position: LatLng)
 }
@@ -35,7 +39,7 @@ interface OnLogOutListener {
 }
 
 
-class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClicker,
+class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilterListener, OnMarkerClicker,
     OnEmotionsClicker, OnSignInListener, OnLogOutListener {
 
     private val RC_SIGN_IN = 24
@@ -68,6 +72,13 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnMarkerClick
     override fun onProfileSelected() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, ProfileFragment())
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun onFilterSelected() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, FilterFragment())
             .addToBackStack(null)
             .commit()
     }

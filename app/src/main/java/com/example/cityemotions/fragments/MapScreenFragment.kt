@@ -17,9 +17,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import com.example.cityemotions.Injector
-import com.example.cityemotions.OnMarkerClicker
-import com.example.cityemotions.OnSelectProfileListener
+import com.example.cityemotions.*
 import com.example.cityemotions.R
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
@@ -122,6 +120,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         // Setup buttons
         view.findViewById<ImageButton>(R.id.profile_button).setOnClickListener {
             (activity as OnSelectProfileListener).onProfileSelected()
+        }
+        view.findViewById<ImageButton>(R.id.filter_button).setOnClickListener {
+            (activity as OnSelectFilterListener).onFilterSelected()
         }
     }
 
