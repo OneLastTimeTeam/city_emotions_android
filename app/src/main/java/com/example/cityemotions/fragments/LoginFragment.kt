@@ -26,10 +26,6 @@ class LoginFragment : Fragment() {
         return inflater.inflate(R.layout.auth_screen, container, false)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<Button>(R.id.login_button).setOnClickListener {

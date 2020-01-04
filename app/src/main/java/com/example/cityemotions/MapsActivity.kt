@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
+import android.view.MenuItem
 import com.example.cityemotions.fragments.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -69,6 +70,17 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilte
         menuInflater.inflate(R.menu.menu, menu)
         menu!!.setGroupVisible(R.id.groupVsbl, true)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val id = item.itemId
+        if (id == R.id.settings) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, SettingsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onStart() {
