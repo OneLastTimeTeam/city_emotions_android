@@ -38,7 +38,8 @@ import java.io.IOException
  * Fragment with map-screen. Implements the logic of working with map
  */
 class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-    PlaceSelectionListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnCameraIdleListener {
+    PlaceSelectionListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnCameraIdleListener,
+    GoogleMap.OnMapClickListener {
     companion object {
         /** Permission access constants */
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -68,7 +69,12 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** Are location updates enabled? */
     private var locationUpdateState = false
 
+    private var visibleMarkers = mutableListOf<Marker>()
+
     private var placedMarker: Marker? = null
+    private var selectedMarker: Marker? = null
+
+    private var isZoomed = false
 
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
@@ -132,6 +138,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map.setOnMarkerClickListener(this)
         map.setOnMapLongClickListener(this)
         map.setOnCameraIdleListener(this)
+        map.setOnMapClickListener(this)
         setupMapLocation()
         setupLocationUpdates()
         placedMarker = null
@@ -142,8 +149,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         if (marker != null && placedMarker != null) {
             if (marker == placedMarker) {
                 (activity as OnMarkerClicker).onMarkerClicked(marker.position)
-                return true
             }
+        }
+        selectedMarker?.remove()
+        selectedMarker = null
+        if (marker != null) {
+            val selectedIndex = visibleMarkers.indexOfFirst { marker.tag == it.tag }
+            selectedMarker = visibleMarkers[selectedIndex]
+            visibleMarkers.removeAt(selectedIndex)
         }
         return false
     }
@@ -182,6 +195,13 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             placedMarker?.remove()
             setSimpleMarkerOnMap(it)
         }
+    }
+
+    override fun onMapClick(p0: LatLng?) {
+        selectedMarker?.let {
+            visibleMarkers.add(it)
+        }
+        selectedMarker = null
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -233,11 +253,13 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             return
         }
         map.isMyLocationEnabled = true
-
         fusedLocationClient.lastLocation.addOnSuccessListener(activity as Activity) { location ->
             location?.let {
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                    LatLng(it.latitude, it.longitude), 18.0f))
+                if (!isZoomed) {
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                        LatLng(it.latitude, it.longitude), 18.0f))
+                    isZoomed = true
+                }
                 lastLocation = it
             }
         }
@@ -295,14 +317,16 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /**
      * Displays MarkerModel on map
      */
-    private fun setCustomMarkerOnMap(marker: MarkerModel) {
+    private fun setCustomMarkerOnMap(marker: MarkerModel): Marker {
         val location = LatLng(marker.latitude, marker.longtitude)
         val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
         val options = MarkerOptions().position(location)
         options.title(getString(marker.emotion.titleId))
             .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
-        map.addMarker(options)
+        val mapMarker = map.addMarker(options)
+        mapMarker.tag = marker.dbId
+        return mapMarker
     }
 
     /**
@@ -316,13 +340,15 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * Updates the state of the map and the markers displayed on it
      */
      private fun fetchMarkers(bounds: LatLngBounds) {
-        map.clear()
+        visibleMarkers.forEach { it.remove() }
 
         mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: List<MarkerModel>) {
                 activity?.runOnUiThread {
                     markers.forEach {
-                        setCustomMarkerOnMap(it)
+                        if (it.dbId != selectedMarker?.tag) {
+                            visibleMarkers.add(setCustomMarkerOnMap(it))
+                        }
                     }
                 }
             }
