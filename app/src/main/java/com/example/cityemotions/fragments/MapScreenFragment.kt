@@ -197,7 +197,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     override fun onMapLongClick(pos: LatLng?) {
         pos?.let {
-            placedMarker?.remove()
             setSimpleMarkerOnMap(it)
         }
     }
@@ -239,19 +238,22 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * @return is permissions granted
      */
     private fun checkLocationPermissions(): Boolean {
-        if (ActivityCompat.checkSelfPermission(
-                activity as Activity,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
+        activity?.let {
+            if (ActivityCompat.checkSelfPermission(
+                    activity as Activity,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    LOCATION_PERMISSION_REQUEST_CODE
+                )
 
-            return false
+                return false
+            }
+            return true
         }
-        return true
+        return false
     }
 
     override fun onRequestPermissionsResult(
@@ -377,6 +379,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * @param latLng marker position
      */
     private fun setSimpleMarkerOnMap(latLng: LatLng) {
+        placedMarker?.remove()
         placedMarker = map.addMarker(MarkerOptions().position(latLng))
     }
 
