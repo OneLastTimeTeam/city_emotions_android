@@ -89,19 +89,25 @@ class UserEmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
         holder.deleteButton.tag = marker.dbId
         holder.deleteButton.setOnClickListener {
             val holderPosition = markersList.indexOfFirst { markerModel -> markerModel.dbId == it.tag }
-            userEmotionFragment.userEmotionsViewModel.removeMarker(markersList[holderPosition],
-                object : MarkerDataSource.RemoveCallback {
-                    override fun onRemove() {
-                        userEmotionFragment.activity?.runOnUiThread {
-                            markersList.removeAt(holderPosition)
-                            notifyItemRemoved(holderPosition)
+            if (holderPosition != -1) {
+                userEmotionFragment.userEmotionsViewModel.removeMarker(markersList[holderPosition],
+                    object : MarkerDataSource.RemoveCallback {
+                        override fun onRemove() {
+                            userEmotionFragment.activity?.runOnUiThread {
+                                // За время работы стороннего треда позиция могла измениться
+                                val updatedPosition = markersList.indexOfFirst { markerModel -> markerModel.dbId == it.tag }
+                                if (updatedPosition != -1) {
+                                    markersList.removeAt(updatedPosition)
+                                    notifyItemRemoved(updatedPosition)
+                                }
+                            }
                         }
-                    }
 
-                    override fun onError(t: Throwable) {
-                        Log.e("RemoveCallback", null, t)
-                    }
-                })
+                        override fun onError(t: Throwable) {
+                            Log.e("RemoveCallback", null, t)
+                        }
+                    })
+            }
         }
     }
 

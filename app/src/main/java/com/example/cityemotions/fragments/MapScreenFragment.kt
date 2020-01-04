@@ -150,17 +150,22 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
+        placedMarker?.remove()
+        selectedMarker?.remove()
+
         if (marker != null && placedMarker != null) {
             if (marker == placedMarker) {
                 (activity as OnMarkerClicker).onMarkerClicked(marker.position)
             }
         }
-        selectedMarker?.remove()
         selectedMarker = null
+        placedMarker = null
         if (marker != null) {
             val selectedIndex = visibleMarkers.indexOfFirst { marker.tag == it.tag }
-            selectedMarker = visibleMarkers[selectedIndex]
-            visibleMarkers.removeAt(selectedIndex)
+            if (selectedIndex != -1) {
+                selectedMarker = visibleMarkers[selectedIndex]
+                visibleMarkers.removeAt(selectedIndex)
+            }
         }
         return false
     }
@@ -206,6 +211,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             visibleMarkers.add(it)
         }
         selectedMarker = null
+        placedMarker?.remove()
+        placedMarker = null
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
