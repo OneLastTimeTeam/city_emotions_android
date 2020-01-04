@@ -69,9 +69,13 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** Are location updates enabled? */
     private var locationUpdateState = false
 
+    /** Visible markers list */
     private var visibleMarkers = mutableListOf<Marker>()
 
+    /** Saved placed marker */
     private var placedMarker: Marker? = null
+
+    /** Saved selected marker */
     private var selectedMarker: Marker? = null
 
     private var isZoomed = false
@@ -227,6 +231,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     /**
      * Check ACCESS_FINE_LOCATION permission and request if its not granted
+     *
+     * @return is permissions granted
      */
     private fun checkLocationPermissions(): Boolean {
         if (ActivityCompat.checkSelfPermission(
@@ -316,6 +322,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     /**
      * Displays MarkerModel on map
+     *
+     * @param marker marker model to set
+     * @return Marker object from map
      */
     private fun setCustomMarkerOnMap(marker: MarkerModel): Marker {
         val location = LatLng(marker.latitude, marker.longtitude)
@@ -331,6 +340,23 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     /**
      * Set simple marker on map to add emotion to its location
+     *
+     * @param latLng marker position
+     */
+    private fun isMarkerVisible(marker: MarkerModel): Boolean {
+        val emotionTag = getString(marker.emotion.titleId)
+        context?.let {
+            val pref = it.getSharedPreferences((activity as MapsActivity)
+                .getSharedPreferencesTag(), 0)
+            return pref.getBoolean(emotionTag, true)
+        }
+        return true
+    }
+
+    /**
+     * Set simple marker on map to add emotion to its location
+     *
+     * @param latLng marker position
      */
     private fun setSimpleMarkerOnMap(latLng: LatLng) {
         placedMarker = map.addMarker(MarkerOptions().position(latLng))
@@ -338,6 +364,8 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
     /**
      * Updates the state of the map and the markers displayed on it
+     *
+     * @param bounds map`s bounds
      */
      private fun fetchMarkers(bounds: LatLngBounds) {
         visibleMarkers.forEach { it.remove() }
@@ -346,7 +374,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             override fun onLoad(markers: List<MarkerModel>) {
                 activity?.runOnUiThread {
                     markers.forEach {
-                        if (it.dbId != selectedMarker?.tag) {
+                        if (it.dbId != selectedMarker?.tag && isMarkerVisible(it)) {
                             visibleMarkers.add(setCustomMarkerOnMap(it))
                         }
                     }

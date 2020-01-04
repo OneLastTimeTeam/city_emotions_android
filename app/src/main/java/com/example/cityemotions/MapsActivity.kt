@@ -42,6 +42,10 @@ interface OnLogOutListener {
 class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilterListener, OnMarkerClicker,
     OnEmotionsClicker, OnSignInListener, OnLogOutListener {
 
+    companion object {
+        const val EMOTION_PREFERENCES = "emotion_preferences"
+    }
+
     private val RC_SIGN_IN = 24
     private lateinit var client: GoogleSignInClient
     private lateinit var account: GoogleSignInAccount
@@ -148,8 +152,19 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilte
 
     /**
      * User ID string getter
+     *
+     * @return user ID string
      */
     fun getUserId(): String {
         return account.id!!
+    }
+
+    /**
+     * Get shared preferences tag
+     *
+     * @return shared preferences string
+     */
+    fun getSharedPreferencesTag(): String {
+        return EMOTION_PREFERENCES + getUserId()
     }
 }

@@ -1,5 +1,6 @@
 package com.example.cityemotions.fragments
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,7 +22,6 @@ class FilterFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         dataAdapter = FilterAdapter()
-        val factory = Injector.provideViewModelFactory()
     }
 
     override fun onCreateView(
@@ -45,7 +45,7 @@ class FilterFragment: Fragment() {
 /**
  * DataAdapter class implementation for user`s emotions list
  */
-class FilterAdapter() : RecyclerView.Adapter<FilterHolder>() {
+class FilterAdapter : RecyclerView.Adapter<FilterHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FilterHolder {
         val view = LayoutInflater
@@ -57,7 +57,25 @@ class FilterAdapter() : RecyclerView.Adapter<FilterHolder>() {
     override fun onBindViewHolder(holder: FilterHolder, position: Int) {
         val emotion = Emotion.values()[position]
         holder.imageView.setImageResource(emotion.resId)
-        holder.textView.text = holder.itemView.context.resources.getString(emotion.titleId)
+        val context = holder.itemView.context
+        val emotionTag = context.resources.getString(emotion.titleId)
+
+        holder.textView.text = emotionTag
+        holder.switch.tag = emotionTag
+
+        val pref = context.getSharedPreferences((context as MapsActivity)
+            .getSharedPreferencesTag(), 0)
+        holder.switch.isChecked = pref.getBoolean(emotionTag, true)
+
+        holder.switch.setOnCheckedChangeListener { buttonView, isChecked ->
+            val switchContext = buttonView.context
+            val switchPref = switchContext.getSharedPreferences((switchContext as MapsActivity)
+                .getSharedPreferencesTag(), 0)
+            val editor = switchPref.edit()
+
+            editor.putBoolean(buttonView.tag as String, isChecked)
+            editor.apply()
+        }
     }
 
     override fun getItemCount(): Int {
