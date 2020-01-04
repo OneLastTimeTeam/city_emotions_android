@@ -150,14 +150,14 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
-        placedMarker?.remove()
-        selectedMarker?.remove()
-
         if (marker != null && placedMarker != null) {
             if (marker == placedMarker) {
                 (activity as OnMarkerClicker).onMarkerClicked(marker.position)
             }
         }
+
+        placedMarker?.remove()
+        selectedMarker?.remove()
         selectedMarker = null
         placedMarker = null
         if (marker != null) {
@@ -193,10 +193,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onCameraIdle() {
         val bounds = map.projection.visibleRegion.latLngBounds
         fetchMarkers(bounds)
-        // Restore placed marker
-        placedMarker?.position?.let {
-            placedMarker = map.addMarker(MarkerOptions().position(it))
-        }
     }
 
     override fun onMapLongClick(pos: LatLng?) {
@@ -227,6 +223,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onPause() {
         super.onPause()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        visibleMarkers.removeAll { it.remove(); true }
     }
 
     override fun onResume() {
@@ -247,8 +244,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 android.Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                activity as Activity,
+            requestPermissions(
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST_CODE
             )
@@ -256,6 +252,21 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             return false
         }
         return true
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.count() > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                setupMapLocation()
+                setupLocationUpdates()
+            }
+        }
     }
 
     /**
@@ -375,14 +386,23 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      * @param bounds map`s bounds
      */
      private fun fetchMarkers(bounds: LatLngBounds) {
-        visibleMarkers.forEach { it.remove() }
+        visibleMarkers.removeAll {
+            if (bounds.contains(it.position)) {
+                false
+            } else {
+                it.remove()
+                true
+            }
+        }
 
         mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: List<MarkerModel>) {
                 activity?.runOnUiThread {
-                    markers.forEach {
-                        if (it.dbId != selectedMarker?.tag && isMarkerVisible(it)) {
-                            visibleMarkers.add(setCustomMarkerOnMap(it))
+                    markers.forEach {markerModel ->
+                        if (markerModel.dbId != selectedMarker?.tag && isMarkerVisible(markerModel)) {
+                            if (visibleMarkers.indexOfFirst { it.tag == markerModel.dbId } == -1) {
+                                visibleMarkers.add(setCustomMarkerOnMap(markerModel))
+                            }
                         }
                     }
                 }
