@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
 import com.example.cityemotions.fragments.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -62,6 +63,12 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilte
                 .replace(R.id.fragment_container, LoginFragment())
                 .commit()
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        menu!!.setGroupVisible(R.id.groupVsbl, true)
+        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onStart() {
