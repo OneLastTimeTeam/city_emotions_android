@@ -33,7 +33,6 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.maps.android.clustering.Cluster
 import com.google.maps.android.clustering.ClusterManager
-import com.google.maps.android.clustering.algo.NonHierarchicalDistanceBasedAlgorithm
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import java.io.IOException
 
@@ -84,20 +83,21 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
 
+    /** Marker Clustering manager */
     private lateinit var clusterManager: ClusterManager<MarkerModel>
 
+    /** Custom listeners */
     private lateinit var cameraIdleListener: CompositeOnCameraIdleListener
     private lateinit var markerClickListener: CompositeOnMarkerClickListener
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Initialize google maps api and create necessary objects
+
         Places.initialize(activity as Context, getString(R.string.google_maps_key))
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
         geocoder = Geocoder(activity as Context)
 
-        // Just update lastLocation
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult?) {
                 super.onLocationResult(result)
@@ -107,7 +107,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             }
         }
 
-        // Create a viewModel object
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
 
@@ -164,6 +163,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map.setOnMapLongClickListener(this)
     }
 
+    /** Setup cluster manager and add listeners */
     private fun setupClusterManager() {
         clusterManager = ClusterManager(context, map)
         clusterManager.renderer = MarkerClasterRenderer(context as Context, map, clusterManager)
@@ -352,9 +352,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     /**
-     * Set simple marker on map to add emotion to its location
+     * Check if the marker is disabled in the filter
      *
-     * @param latLng marker position
+     * @param marker marker model to check
      */
     private fun isMarkerVisible(marker: MarkerModel): Boolean {
         val emotionTag = getString(marker.emotion.titleId)
