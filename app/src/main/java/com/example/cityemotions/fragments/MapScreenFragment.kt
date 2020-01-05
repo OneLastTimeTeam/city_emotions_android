@@ -31,6 +31,9 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.maps.android.clustering.Cluster
+import com.google.maps.android.clustering.ClusterManager
+import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import java.io.IOException
 
 
@@ -45,7 +48,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val REQUEST_CHECK_SETTINGS = 2
 
-        private const val markerSize = 96
+        const val markerSize = 96
     }
 
     /** GoogleMap object */
@@ -70,18 +73,20 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     private var locationUpdateState = false
 
     /** Visible markers list */
-    private var visibleMarkers = mutableListOf<Marker>()
+    private var visibleMarkers = mutableListOf<MarkerModel>()
 
     /** Saved placed marker */
     private var placedMarker: Marker? = null
-
-    /** Saved selected marker */
-    private var selectedMarker: Marker? = null
 
     private var isZoomed = false
 
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
+
+    private lateinit var clusterManager: ClusterManager<MarkerModel>
+
+    private lateinit var cameraIdleListener: CompositeOnCameraIdleListener
+    private lateinit var markerClickListener: CompositeOnMarkerClickListener
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,6 +109,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         // Create a viewModel object
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
+
+        cameraIdleListener = CompositeOnCameraIdleListener()
+        markerClickListener = CompositeOnMarkerClickListener()
     }
 
     override fun onCreateView(
@@ -139,14 +147,28 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         map.uiSettings.isZoomControlsEnabled = true
-        map.setOnMarkerClickListener(this)
-        map.setOnMapLongClickListener(this)
-        map.setOnCameraIdleListener(this)
-        map.setOnMapClickListener(this)
+
+        cameraIdleListener.addListener(this)
+        markerClickListener.addListener(this)
+
         setupMapLocation()
         setupLocationUpdates()
+        setupClusterManager()
+
         placedMarker = null
         fetchMarkers(map.projection.visibleRegion.latLngBounds)
+
+        map.setOnCameraIdleListener(cameraIdleListener)
+        map.setOnMarkerClickListener(markerClickListener)
+        map.setOnMapClickListener(this)
+        map.setOnMapLongClickListener(this)
+    }
+
+    private fun setupClusterManager() {
+        clusterManager = ClusterManager(context, map)
+        clusterManager.renderer = MarkerClasterRenderer(context as Context, map, clusterManager)
+        cameraIdleListener.addListener(clusterManager)
+        markerClickListener.addListener(clusterManager)
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
@@ -157,16 +179,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
 
         placedMarker?.remove()
-        selectedMarker?.remove()
-        selectedMarker = null
         placedMarker = null
-        if (marker != null) {
-            val selectedIndex = visibleMarkers.indexOfFirst { marker.tag == it.tag }
-            if (selectedIndex != -1) {
-                selectedMarker = visibleMarkers[selectedIndex]
-                visibleMarkers.removeAt(selectedIndex)
-            }
-        }
         return false
     }
 
@@ -201,11 +214,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
-    override fun onMapClick(p0: LatLng?) {
-        selectedMarker?.let {
-            visibleMarkers.add(it)
-        }
-        selectedMarker = null
+    override fun onMapClick(pos: LatLng?) {
         placedMarker?.remove()
         placedMarker = null
     }
@@ -222,14 +231,16 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onPause() {
         super.onPause()
         fusedLocationClient.removeLocationUpdates(locationCallback)
-        visibleMarkers.removeAll { it.remove(); true }
+        visibleMarkers.removeAll { clusterManager.removeItem(it); true }
     }
 
     override fun onResume() {
         super.onResume()
         if (!locationUpdateState) {
             setupLocationUpdates()
+            return
         }
+        fetchMarkers(map.projection.visibleRegion.latLngBounds)
     }
 
     /**
@@ -341,24 +352,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     /**
-     * Displays MarkerModel on map
-     *
-     * @param marker marker model to set
-     * @return Marker object from map
-     */
-    private fun setCustomMarkerOnMap(marker: MarkerModel): Marker {
-        val location = LatLng(marker.latitude, marker.longtitude)
-        val bitmap = BitmapFactory.decodeResource(resources, marker.emotion.resId)
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, markerSize, markerSize, false)
-        val options = MarkerOptions().position(location)
-        options.title(getString(marker.emotion.titleId))
-            .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
-        val mapMarker = map.addMarker(options)
-        mapMarker.tag = marker.dbId
-        return mapMarker
-    }
-
-    /**
      * Set simple marker on map to add emotion to its location
      *
      * @param latLng marker position
@@ -390,24 +383,27 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
      */
      private fun fetchMarkers(bounds: LatLngBounds) {
         visibleMarkers.removeAll {
-            if (bounds.contains(it.position)) {
+            if (bounds.contains(it.position) && isMarkerVisible(it)) {
                 false
             } else {
-                it.remove()
+                clusterManager.removeItem(it)
                 true
             }
         }
+        clusterManager.cluster()
 
         mapScreenViewModel.getMarkers(bounds, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: List<MarkerModel>) {
                 activity?.runOnUiThread {
                     markers.forEach {markerModel ->
-                        if (markerModel.dbId != selectedMarker?.tag && isMarkerVisible(markerModel)) {
-                            if (visibleMarkers.indexOfFirst { it.tag == markerModel.dbId } == -1) {
-                                visibleMarkers.add(setCustomMarkerOnMap(markerModel))
+                        if (isMarkerVisible(markerModel)) {
+                            if (visibleMarkers.indexOfFirst { it.dbId == markerModel.dbId } == -1) {
+                                clusterManager.addItem(markerModel)
+                                visibleMarkers.add(markerModel)
                             }
                         }
                     }
+                    clusterManager.cluster()
                 }
             }
 
@@ -415,5 +411,65 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 Log.e("LoadCallback", null, t)
             }
         })
+    }
+}
+
+
+class CompositeOnCameraIdleListener: GoogleMap.OnCameraIdleListener {
+    private var mListeners = mutableListOf<GoogleMap.OnCameraIdleListener>()
+
+    fun addListener(listener: GoogleMap.OnCameraIdleListener) {
+        mListeners.add(listener)
+    }
+
+    override fun onCameraIdle() {
+        for (listener in mListeners) {
+            listener.onCameraIdle()
+        }
+    }
+}
+
+
+class CompositeOnMarkerClickListener: GoogleMap.OnMarkerClickListener {
+    private var mListeners = mutableListOf<GoogleMap.OnMarkerClickListener>()
+
+    fun addListener(listener: GoogleMap.OnMarkerClickListener) {
+        mListeners.add(listener)
+    }
+
+    override fun onMarkerClick(marker: Marker?): Boolean {
+        for (listener in mListeners) {
+            listener.onMarkerClick(marker)
+        }
+        return false
+    }
+}
+
+
+class MarkerClasterRenderer(private val context: Context, private val map: GoogleMap,
+                            private val clusterManager: ClusterManager<MarkerModel>):
+    DefaultClusterRenderer<MarkerModel>(context, map, clusterManager) {
+    companion object {
+        const val MINIMUM_CLUSTER_SIZE = 5
+    }
+
+    override fun shouldRenderAsCluster(cluster: Cluster<MarkerModel>?): Boolean {
+        cluster?.let {
+            return cluster.size >= MINIMUM_CLUSTER_SIZE
+        }
+        return false
+    }
+
+    override fun onBeforeClusterItemRendered(item: MarkerModel?, markerOptions: MarkerOptions?) {
+        super.onBeforeClusterItemRendered(item, markerOptions)
+        item?.let {
+            val bitmap = BitmapFactory.decodeResource(context.resources, item.emotion.resId)
+            val resizedBitmap = Bitmap.createScaledBitmap(bitmap,
+                MapScreenFragment.markerSize,
+                MapScreenFragment.markerSize, false)
+            markerOptions?.title(context.getString(item.emotion.titleId))
+                ?.icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
+                ?.snippet(null)
+        }
     }
 }

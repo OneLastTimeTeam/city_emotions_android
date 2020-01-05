@@ -178,6 +178,10 @@ class MapsActivity : AppCompatActivity(), OnSelectProfileListener, OnSelectFilte
         return account.id!!
     }
 
+    fun getUsername(): String {
+        return account.displayName!!
+    }
+
     /**
      * Get shared preferences tag
      *
