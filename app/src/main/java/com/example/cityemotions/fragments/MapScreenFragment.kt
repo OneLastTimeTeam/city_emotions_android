@@ -33,6 +33,7 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.maps.android.clustering.Cluster
 import com.google.maps.android.clustering.ClusterManager
+import com.google.maps.android.clustering.algo.NonHierarchicalDistanceBasedAlgorithm
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import java.io.IOException
 
@@ -155,7 +156,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         setupLocationUpdates()
         setupClusterManager()
 
-        placedMarker = null
         fetchMarkers(map.projection.visibleRegion.latLngBounds)
 
         map.setOnCameraIdleListener(cameraIdleListener)
@@ -180,7 +180,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         placedMarker?.remove()
         placedMarker = null
-        return false
+        return true
     }
 
     override fun onPlaceSelected(place: Place) {
@@ -214,7 +214,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
-    override fun onMapClick(pos: LatLng?) {
+    override fun onMapClick(p0: LatLng?) {
         placedMarker?.remove()
         placedMarker = null
     }
@@ -441,16 +441,21 @@ class CompositeOnMarkerClickListener: GoogleMap.OnMarkerClickListener {
         for (listener in mListeners) {
             listener.onMarkerClick(marker)
         }
-        return false
+        return true
     }
 }
 
 
 class MarkerClasterRenderer(private val context: Context, private val map: GoogleMap,
                             private val clusterManager: ClusterManager<MarkerModel>):
-    DefaultClusterRenderer<MarkerModel>(context, map, clusterManager) {
+    DefaultClusterRenderer<MarkerModel>(context, map, clusterManager),
+    ClusterManager.OnClusterItemClickListener<MarkerModel> {
     companion object {
         const val MINIMUM_CLUSTER_SIZE = 5
+    }
+
+    init {
+        clusterManager.setOnClusterItemClickListener(this)
     }
 
     override fun shouldRenderAsCluster(cluster: Cluster<MarkerModel>?): Boolean {
@@ -471,5 +476,23 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
                 ?.icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
                 ?.snippet(null)
         }
+    }
+
+    override fun onClusterItemRendered(clusterItem: MarkerModel?, marker: Marker?) {
+        super.onClusterItemRendered(clusterItem, marker)
+        clusterItem?.let {
+            marker?.tag = clusterItem.dbId
+        }
+    }
+
+    override fun onClusterItemClick(markerModel: MarkerModel?): Boolean {
+        markerModel?.let {
+            for (marker in clusterManager.markerCollection.markers) {
+                if (marker.tag == markerModel.dbId) {
+                    marker.showInfoWindow()
+                }
+            }
+        }
+        return false
     }
 }
