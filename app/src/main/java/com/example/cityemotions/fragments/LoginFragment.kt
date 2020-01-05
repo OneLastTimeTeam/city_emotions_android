@@ -3,6 +3,7 @@ package com.example.cityemotions.fragments
 import android.os.Bundle
 import android.view.*
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.OnSignInListener
 import com.example.cityemotions.R
@@ -14,7 +15,7 @@ import com.example.cityemotions.R
 class LoginFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setHasOptionsMenu(true)
+        (activity as AppCompatActivity).supportActionBar?.hide()
         super.onCreate(savedInstanceState)
     }
 

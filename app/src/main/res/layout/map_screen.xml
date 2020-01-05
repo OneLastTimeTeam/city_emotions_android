@@ -30,7 +30,7 @@
             android:layout_width="68dp"
             android:layout_height="68dp"
             android:background="@null"
-            android:layout_alignParentTop="true"
+            android:layout_above="@id/profile_button"
             android:src="@drawable/filter_button" />
     </RelativeLayout>
 

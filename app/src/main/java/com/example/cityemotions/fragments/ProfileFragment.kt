@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.OnEmotionsClicker
 import com.example.cityemotions.OnLogOutListener
@@ -16,6 +17,7 @@ import com.example.cityemotions.R
 class ProfileFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (activity as AppCompatActivity).supportActionBar?.show()
         setHasOptionsMenu(true)
         super.onCreate(savedInstanceState)
     }
@@ -37,10 +39,6 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<Button>(R.id.user_emotions_button).setOnClickListener {
             (activity as OnEmotionsClicker).onEmotionsClicked()
-        }
-
-        view.findViewById<Button>(R.id.logout_button).setOnClickListener {
-            (activity as OnLogOutListener).onLogOut()
         }
     }
 }

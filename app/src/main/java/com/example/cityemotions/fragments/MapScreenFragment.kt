@@ -11,10 +11,9 @@ import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageButton
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.*
@@ -90,6 +89,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (activity as AppCompatActivity).supportActionBar?.hide()
         super.onCreate(savedInstanceState)
         // Initialize google maps api and create necessary objects
         Places.initialize(activity as Context, getString(R.string.google_maps_key))
@@ -124,6 +124,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        (activity as AppCompatActivity).supportActionBar?.hide()
         super.onViewCreated(view, savedInstanceState)
         // Setup google api fragments
         val mapFragment =
