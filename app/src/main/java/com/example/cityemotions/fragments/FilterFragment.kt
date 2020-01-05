@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cityemotions.*
 import com.example.cityemotions.datamodels.Emotion
 
+
 /**
  * Filters fragment
  */

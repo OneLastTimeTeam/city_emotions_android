@@ -25,7 +25,7 @@ import java.io.IOException
 /**
  * Fragment for selecting and adding a new marker to the map
  */
-class NewMarkerFragment: Fragment() {
+class NewMarkerFragment: Fragment(), View.OnClickListener {
     companion object {
         const val SAVED_LONGTITUDE: String = "saved.longtitude"
         const val SAVED_LATITUDE: String = "saved.latitude"
@@ -79,53 +79,58 @@ class NewMarkerFragment: Fragment() {
         recyclerView.adapter = dataAdapter
 
         val addButton = view.findViewById<Button>(R.id.add_button)
-        addButton.setOnClickListener {
-            if (dataAdapter.checkedEmotion == null) {
-                Toast.makeText(activity, "Choose emotion!", Toast.LENGTH_SHORT).show()
-            } else {
-                dataAdapter.checkedEmotion?.adapterPosition?.let {
-                    var description: String
-                    try {
-                        val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
-                        if (addresses != null && addresses.size != 0) {
-                            val address = addresses[0]
-                            val addressFragments = with(address) {
-                                (0..maxAddressLineIndex).map { getAddressLine(it) }
-                            }
-                            description = addressFragments.joinToString(separator = " ")
-                        } else {
-                            throw IOException()
-                        }
-                    } catch (_: IOException) {
-                        description = "${longtitude}, ${latitude}"
+        addButton.setOnClickListener(this)
+    }
+
+    override fun onClick(view: View?) {
+        if (dataAdapter.checkedEmotion == null) {
+            Toast.makeText(activity, "Choose emotion!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        dataAdapter.checkedEmotion?.adapterPosition?.let {
+            var description: String
+            try {
+                val addresses = geocoder.getFromLocation(latitude, longtitude, 1)
+                if (addresses != null && addresses.size != 0) {
+                    val address = addresses[0]
+                    val addressFragments = with(address) {
+                        (0..maxAddressLineIndex).map { getAddressLine(it) }
                     }
-                    val userId = (activity as MapsActivity).getUserId()
-                    val marker = MarkerModel(
-                        dbId = 0,
-                        latitude = latitude,
-                        longtitude = longtitude,
-                        emotion = Emotion.values()[it],
-                        description = description,
-                        userId = userId
-                    )
-
-                    newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
-                        override fun onAdd() {
-                            activity?.runOnUiThread {
-                                activity?.onBackPressed()
-                            }
-                        }
-
-                        override fun onError(t: Throwable) {
-                            activity?.runOnUiThread {
-                                Log.e("APICALL", null, t)
-                                Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
-                                    .show()
-                            }
-                        }
-                    })
+                    description = addressFragments.joinToString(separator = " ")
+                } else {
+                    throw IOException()
                 }
+            } catch (_: IOException) {
+                description = "${longtitude}, ${latitude}"
             }
+            val userId = (activity as MapsActivity).getUserId()
+            val marker = MarkerModel(
+                dbId = 0,
+                latitude = latitude,
+                longtitude = longtitude,
+                emotion = Emotion.values()[it],
+                description = description,
+                userId = userId
+            )
+            val ref = this
+            view?.setOnClickListener(null)
+            newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
+                override fun onAdd() {
+                    activity?.runOnUiThread {
+                        activity?.onBackPressed()
+                    }
+                }
+
+                override fun onError(t: Throwable) {
+                    activity?.runOnUiThread {
+                        view?.setOnClickListener(ref)
+                        Log.e("APICALL", null, t)
+                        Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
+                            .show()
+                    }
+                }
+            })
+
         }
     }
 }

@@ -48,6 +48,7 @@ class UserEmotionsFragment: Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.user_emotions_list)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = dataAdapter
+
         val userId = (activity as MapsActivity).getUserId()
         userEmotionsViewModel.getUsersMarkers(userId, object : MarkerDataSource.LoadCallback {
             override fun onLoad(markers: List<MarkerModel>) {
@@ -71,7 +72,7 @@ class UserEmotionsFragment: Fragment() {
  * DataAdapter class implementation for user`s emotions list
  */
 class UserEmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
-    : RecyclerView.Adapter<UserEmotionViewHolder>() {
+    : RecyclerView.Adapter<UserEmotionViewHolder>(), View.OnClickListener {
 
     val markersList: MutableList<MarkerModel> = mutableListOf()
 
@@ -87,28 +88,32 @@ class UserEmotionAdapter(private val userEmotionFragment: UserEmotionsFragment)
         holder.imageView.setImageResource(marker.emotion.resId)
         holder.textView.text = marker.description
         holder.deleteButton.tag = marker.dbId
-        holder.deleteButton.setOnClickListener {
-            val holderPosition = markersList.indexOfFirst { markerModel -> markerModel.dbId == it.tag }
-            if (holderPosition != -1) {
-                userEmotionFragment.userEmotionsViewModel.removeMarker(markersList[holderPosition],
-                    object : MarkerDataSource.RemoveCallback {
-                        override fun onRemove() {
-                            userEmotionFragment.activity?.runOnUiThread {
-                                // За время работы стороннего треда позиция могла измениться
-                                val updatedPosition = markersList.indexOfFirst { markerModel -> markerModel.dbId == it.tag }
-                                if (updatedPosition != -1) {
-                                    markersList.removeAt(updatedPosition)
-                                    notifyItemRemoved(updatedPosition)
-                                }
-                            }
-                        }
+        holder.deleteButton.setOnClickListener(this)
+    }
 
-                        override fun onError(t: Throwable) {
-                            Log.e("RemoveCallback", null, t)
-                        }
-                    })
-            }
+    override fun onClick(view: View?) {
+        val holderPosition = markersList.indexOfFirst { it.dbId == view?.tag }
+        if (holderPosition == -1) {
+            return
         }
+        userEmotionFragment.userEmotionsViewModel.removeMarker(markersList[holderPosition],
+            object : MarkerDataSource.RemoveCallback {
+                override fun onRemove() {
+                    userEmotionFragment.activity?.runOnUiThread {
+                        // За время работы стороннего треда позиция могла измениться
+                        val updatedPosition = markersList.indexOfFirst { it.dbId == view?.tag }
+                        if (updatedPosition != -1) {
+                            markersList.removeAt(updatedPosition)
+                            notifyItemRemoved(updatedPosition)
+                        }
+                    }
+                }
+
+                override fun onError(t: Throwable) {
+                    Log.e("RemoveCallback", null, t)
+                }
+            })
+
     }
 
     override fun getItemCount(): Int {

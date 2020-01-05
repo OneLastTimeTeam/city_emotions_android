@@ -30,7 +30,8 @@ enum class Emotion(val dbId: Int, val resId: Int, val titleId: Int) {
  * @property emotion marker`s emotion
  */
 data class MarkerModel(val dbId: Int, val latitude: Double, val longtitude: Double,
-                       val emotion: Emotion, val description: String, val userId: String): ClusterItem {
+                       val emotion: Emotion, val description: String, val userId: String):
+    ClusterItem {
 
     override fun getPosition(): LatLng {
         return LatLng(latitude, longtitude)
@@ -39,7 +40,7 @@ data class MarkerModel(val dbId: Int, val latitude: Double, val longtitude: Doub
     override fun getSnippet(): String {
         return "Undefined emotion"
     }
-    
+
     override fun getTitle(): String {
         return "Emotion"
     }

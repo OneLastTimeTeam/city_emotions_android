@@ -82,8 +82,10 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** ViewModel class to work with map and sending requests to storage and etc. */
     private lateinit var mapScreenViewModel: MapScreenViewModel
 
+    /** Marker Clustering manager */
     private lateinit var clusterManager: ClusterManager<MarkerModel>
 
+    /** Custom listeners */
     private lateinit var cameraIdleListener: CompositeOnCameraIdleListener
     private lateinit var markerClickListener: CompositeOnMarkerClickListener
 
@@ -91,12 +93,11 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     override fun onCreate(savedInstanceState: Bundle?) {
         (activity as AppCompatActivity).supportActionBar?.hide()
         super.onCreate(savedInstanceState)
-        // Initialize google maps api and create necessary objects
+
         Places.initialize(activity as Context, getString(R.string.google_maps_key))
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Context)
         geocoder = Geocoder(activity as Context)
 
-        // Just update lastLocation
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult?) {
                 super.onLocationResult(result)
@@ -106,7 +107,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             }
         }
 
-        // Create a viewModel object
         val factory = Injector.provideViewModelFactory()
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
 
@@ -156,7 +156,6 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         setupLocationUpdates()
         setupClusterManager()
 
-        placedMarker = null
         fetchMarkers(map.projection.visibleRegion.latLngBounds)
 
         map.setOnCameraIdleListener(cameraIdleListener)
@@ -165,6 +164,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         map.setOnMapLongClickListener(this)
     }
 
+    /** Setup cluster manager and add listeners */
     private fun setupClusterManager() {
         clusterManager = ClusterManager(context, map)
         clusterManager.renderer = MarkerClasterRenderer(context as Context, map, clusterManager)
@@ -181,7 +181,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
 
         placedMarker?.remove()
         placedMarker = null
-        return false
+        return true
     }
 
     override fun onPlaceSelected(place: Place) {
@@ -215,7 +215,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         }
     }
 
-    override fun onMapClick(pos: LatLng?) {
+    override fun onMapClick(p0: LatLng?) {
         placedMarker?.remove()
         placedMarker = null
     }
@@ -353,9 +353,9 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     }
 
     /**
-     * Set simple marker on map to add emotion to its location
+     * Check if the marker is disabled in the filter
      *
-     * @param latLng marker position
+     * @param marker marker model to check
      */
     private fun isMarkerVisible(marker: MarkerModel): Boolean {
         val emotionTag = getString(marker.emotion.titleId)
@@ -442,16 +442,21 @@ class CompositeOnMarkerClickListener: GoogleMap.OnMarkerClickListener {
         for (listener in mListeners) {
             listener.onMarkerClick(marker)
         }
-        return false
+        return true
     }
 }
 
 
 class MarkerClasterRenderer(private val context: Context, private val map: GoogleMap,
                             private val clusterManager: ClusterManager<MarkerModel>):
-    DefaultClusterRenderer<MarkerModel>(context, map, clusterManager) {
+    DefaultClusterRenderer<MarkerModel>(context, map, clusterManager),
+    ClusterManager.OnClusterItemClickListener<MarkerModel> {
     companion object {
         const val MINIMUM_CLUSTER_SIZE = 5
+    }
+
+    init {
+        clusterManager.setOnClusterItemClickListener(this)
     }
 
     override fun shouldRenderAsCluster(cluster: Cluster<MarkerModel>?): Boolean {
@@ -472,5 +477,23 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
                 ?.icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
                 ?.snippet(null)
         }
+    }
+
+    override fun onClusterItemRendered(clusterItem: MarkerModel?, marker: Marker?) {
+        super.onClusterItemRendered(clusterItem, marker)
+        clusterItem?.let {
+            marker?.tag = clusterItem.dbId
+        }
+    }
+
+    override fun onClusterItemClick(markerModel: MarkerModel?): Boolean {
+        markerModel?.let {
+            for (marker in clusterManager.markerCollection.markers) {
+                if (marker.tag == markerModel.dbId) {
+                    marker.showInfoWindow()
+                }
+            }
+        }
+        return false
     }
 }

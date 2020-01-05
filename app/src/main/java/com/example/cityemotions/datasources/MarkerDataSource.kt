@@ -71,9 +71,6 @@ class MarkerDataSource {
         private val REMOVE_PATH = "/remove_marker"
     }
 
-    // Temporary solution
-    private var data: MutableList<MarkerModel> = mutableListOf()
-
     /**
      * GetMarkers from storage and put them in callback
      *
