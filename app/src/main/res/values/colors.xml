@@ -6,4 +6,12 @@
     <color name="lightGrey">#EDEEF0</color>
     <color name="darkGrey">#667083</color>
     <color name="white">#FFFFFF</color>
+
+    <color name="anger">#E15041</color>
+    <color name="contempt">#D160C8</color>
+    <color name="disgust">#47CF69</color>
+    <color name="fear">#9A76E0</color>
+    <color name="happy">#FEFD4C</color>
+    <color name="sadness">#71D499</color>
+    <color name="surprise">#FFAA1D</color>
 </resources>

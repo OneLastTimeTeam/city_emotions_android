@@ -4,6 +4,11 @@
     android:layout_height="match_parent"
     android:background="@color/lightGrey">
 
+    <com.github.mikephil.charting.charts.PieChart
+        android:id = "@+id/pieChart"
+        android:layout_width = "match_parent"
+        android:layout_height = "300dp" />
+
     <Button
         android:id="@+id/user_emotions_button"
         android:layout_width="match_parent"
