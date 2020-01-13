@@ -2,6 +2,7 @@ package com.example.cityemotions.usecases
 
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
+import com.example.cityemotions.datasources.SQLiteDataSource
 import com.google.android.gms.maps.model.LatLngBounds
 
 
@@ -11,7 +12,8 @@ import com.google.android.gms.maps.model.LatLngBounds
  * @property dataRepository instance of MarkerDataStorage
  * @constructor Creates new UseCase
  */
-class GetMarkers(private val dataRepository: MarkerDataSource):
+class GetMarkers(private val dataRepository: MarkerDataSource,
+                 private val sqLiteDataSource: SQLiteDataSource):
     UseCase<GetMarkers.RequestValue, GetMarkers.ResponseValue>() {
 
     /**
@@ -30,6 +32,8 @@ class GetMarkers(private val dataRepository: MarkerDataSource):
                 }
 
                 override fun onError(t: Throwable) {
+                    val localMarkers = sqLiteDataSource.getMarkers()
+                    useCaseCallback?.onSuccess(ResponseValue(localMarkers))
                     useCaseCallback?.onError(t)
                 }
             })

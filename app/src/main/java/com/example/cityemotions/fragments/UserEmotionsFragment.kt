@@ -1,5 +1,6 @@
 package com.example.cityemotions.fragments
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -30,7 +31,7 @@ class UserEmotionsFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         dataAdapter = UserEmotionAdapter(this)
-        val factory = Injector.provideViewModelFactory()
+        val factory = Injector.provideViewModelFactory(activity as Context)
         userEmotionsViewModel = factory.create(UserEmotionsViewModel::class.java)
     }
 

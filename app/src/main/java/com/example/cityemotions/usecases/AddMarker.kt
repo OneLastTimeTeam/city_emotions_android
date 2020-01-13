@@ -2,6 +2,7 @@ package com.example.cityemotions.usecases
 
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
+import com.example.cityemotions.datasources.SQLiteDataSource
 
 
 /**
@@ -10,7 +11,8 @@ import com.example.cityemotions.datasources.MarkerDataSource
  * @property dataRepository instance of MarkerDataStorage
  * @constructor Creates new UseCase
  */
-class AddMarker (private val dataRepository: MarkerDataSource):
+class AddMarker (private val dataRepository: MarkerDataSource,
+                 private val sqLiteRepository: SQLiteDataSource):
         UseCase<AddMarker.RequestValue, AddMarker.ResponseValue>() {
     /**
      * Add new marker to the storage
@@ -21,8 +23,9 @@ class AddMarker (private val dataRepository: MarkerDataSource):
         if (requestValue != null) {
             dataRepository.addMarker(requestValue.marker, object :
                 MarkerDataSource.AddCallback {
-                override fun onAdd() {
-                    useCaseCallback?.onSuccess(ResponseValue())
+                override fun onAdd(marker: MarkerModel) {
+                    sqLiteRepository.addMarker(marker)
+                    useCaseCallback?.onSuccess(ResponseValue(marker))
                 }
 
                 override fun onError(t: Throwable) {
@@ -33,5 +36,5 @@ class AddMarker (private val dataRepository: MarkerDataSource):
     }
 
     class RequestValue(val marker: MarkerModel): UseCase.RequestValue
-    class ResponseValue: UseCase.ResponseValue
+    class ResponseValue(val marker: MarkerModel): UseCase.ResponseValue
 }

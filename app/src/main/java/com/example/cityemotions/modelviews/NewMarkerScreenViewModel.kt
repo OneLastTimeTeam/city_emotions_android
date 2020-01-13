@@ -29,7 +29,7 @@ class NewMarkerScreenViewModel(private val addMarker: AddMarker,
         useCaseHandler.execute(addMarker, requestValue, object :
             UseCase.UseCaseCallback<AddMarker.ResponseValue> {
             override fun onSuccess(response: AddMarker.ResponseValue) {
-                callback.onAdd()
+                callback.onAdd(response.marker)
             }
 
             override fun onError(t: Throwable) {

@@ -2,6 +2,7 @@ package com.example.cityemotions.usecases
 
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
+import com.example.cityemotions.datasources.SQLiteDataSource
 
 /**
  * A class that allows you to add new marker to the storage
@@ -9,7 +10,8 @@ import com.example.cityemotions.datasources.MarkerDataSource
  * @property dataRepository instance of MarkerDataStorage
  * @constructor Creates new UseCase
  */
-class RemoveMarker (private val dataRepository: MarkerDataSource):
+class RemoveMarker (private val dataRepository: MarkerDataSource,
+                    private val sqLiteDataSource: SQLiteDataSource):
     UseCase<RemoveMarker.RequestValue, RemoveMarker.ResponseValue>() {
     /**
      * Add new marker to the storage
@@ -21,6 +23,7 @@ class RemoveMarker (private val dataRepository: MarkerDataSource):
             dataRepository.removeMarker(requestValue.marker, object :
                 MarkerDataSource.RemoveCallback {
                 override fun onRemove() {
+                    sqLiteDataSource.removeMarker(requestValue.marker)
                     useCaseCallback?.onSuccess(ResponseValue())
                 }
 

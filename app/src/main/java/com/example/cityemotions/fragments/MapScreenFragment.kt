@@ -107,7 +107,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             }
         }
 
-        val factory = Injector.provideViewModelFactory()
+        val factory = Injector.provideViewModelFactory(activity as Context)
         mapScreenViewModel = factory.create(MapScreenViewModel::class.java)
 
         cameraIdleListener = CompositeOnCameraIdleListener()

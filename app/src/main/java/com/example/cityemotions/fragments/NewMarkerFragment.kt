@@ -56,7 +56,7 @@ class NewMarkerFragment: Fragment(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         dataAdapter = EmotionAdapter()
-        val factory = Injector.provideViewModelFactory()
+        val factory = Injector.provideViewModelFactory(activity as Context)
         newMarkerScreenViewModel = factory.create(NewMarkerScreenViewModel::class.java)
         geocoder = Geocoder(activity as Context)
     }
@@ -115,7 +115,7 @@ class NewMarkerFragment: Fragment(), View.OnClickListener {
             val ref = this
             view?.setOnClickListener(null)
             newMarkerScreenViewModel.addMarker(marker, object : MarkerDataSource.AddCallback{
-                override fun onAdd() {
+                override fun onAdd(marker: MarkerModel) {
                     activity?.runOnUiThread {
                         activity?.onBackPressed()
                     }

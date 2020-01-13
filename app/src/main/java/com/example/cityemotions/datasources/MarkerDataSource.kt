@@ -8,6 +8,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.IOException
 
 
@@ -208,7 +209,20 @@ class MarkerDataSource {
                 if (response.code != 200) {
                     callback.onError(Throwable("Internal Server Error"))
                 } else {
-                    callback.onAdd()
+                    response.body?.let {
+                        val stringBody = it.string()
+                        val jsonObject = JSONObject(stringBody)
+
+                        val newMarker = MarkerModel(
+                            dbId = jsonObject.getInt("id"),
+                            latitude = jsonObject.getDouble("latitude"),
+                            longtitude = jsonObject.getDouble("longtitude"),
+                            emotion = Emotion.values()[jsonObject.getInt("emotionId")],
+                            description = jsonObject.getString("description"),
+                            userId = jsonObject.getString("userId")
+                        )
+                        callback.onAdd(newMarker)
+                    }
                 }
             }
 
@@ -257,7 +271,7 @@ class MarkerDataSource {
     }
 
     interface AddCallback {
-        fun onAdd()
+        fun onAdd(marker: MarkerModel)
         fun onError(t: Throwable)
     }
 

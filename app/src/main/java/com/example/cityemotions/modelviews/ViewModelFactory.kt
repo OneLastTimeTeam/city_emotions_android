@@ -1,5 +1,6 @@
 package com.example.cityemotions.modelviews
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.cityemotions.Injector
@@ -8,13 +9,14 @@ import com.example.cityemotions.Injector
 /**
  * Factory produces ViewModels objects
  */
-class ViewModelFactory : ViewModelProvider.Factory {
+class ViewModelFactory(private val context: Context): ViewModelProvider.Factory {
     companion object {
         private var instance: ViewModelFactory? = null
 
-        fun getInstance(): ViewModelFactory {
+        fun getInstance(context: Context): ViewModelFactory {
             if (instance == null) {
-                instance = ViewModelFactory()
+                instance = ViewModelFactory(context)
+
             }
             return instance!!
         }
@@ -32,21 +34,21 @@ class ViewModelFactory : ViewModelProvider.Factory {
             MapScreenViewModel::class.java -> {
                 @Suppress("UNCHECKED_CAST")
                 return MapScreenViewModel(
-                    Injector.provideGetMarkers(),
+                    Injector.provideGetMarkers(context),
                     Injector.provideUseCaseHandler()
                 ) as T
             }
             NewMarkerScreenViewModel::class.java -> {
                 @Suppress("UNCHECKED_CAST")
                 return NewMarkerScreenViewModel(
-                    Injector.provideAddMarker(),
+                    Injector.provideAddMarker(context),
                     Injector.provideUseCaseHandler()
                 ) as T
             }
             UserEmotionsViewModel::class.java -> {
                 @Suppress("UNCHECKED_CAST")
                 return UserEmotionsViewModel(
-                    Injector.provideRemoveMarker(),
+                    Injector.provideRemoveMarker(context),
                     Injector.provideGetUsersMarker(),
                     Injector.provideUseCaseHandler()
                 ) as T
