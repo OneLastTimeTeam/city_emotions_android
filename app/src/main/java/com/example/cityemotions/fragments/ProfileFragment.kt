@@ -1,12 +1,21 @@
 package com.example.cityemotions.fragments
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.example.cityemotions.Injector
+import com.example.cityemotions.MapsActivity
 import com.example.cityemotions.OnEmotionsClicker
 import com.example.cityemotions.R
+import com.example.cityemotions.datamodels.EmotionStat
+import com.example.cityemotions.datasources.MarkerDataSource
+import com.example.cityemotions.modelviews.ProfileViewModel
+import com.github.mikephil.charting.charts.Chart
+import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
@@ -20,10 +29,15 @@ import kotlin.collections.ArrayList
  */
 class ProfileFragment : Fragment() {
 
+    private lateinit var profileViewModel: ProfileViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         (activity as AppCompatActivity).supportActionBar?.show()
         setHasOptionsMenu(true)
         super.onCreate(savedInstanceState)
+
+        val factory = Injector.provideViewModelFactory(activity as Context)
+        profileViewModel = factory.create(ProfileViewModel::class.java)
     }
 
     override fun onCreateView(
@@ -44,32 +58,45 @@ class ProfileFragment : Fragment() {
         user_emotions_button.setOnClickListener {
             (activity as OnEmotionsClicker).onEmotionsClicked()
         }
-        val allColors = intArrayOf(ContextCompat.getColor(context!!, R.color.anger),
-            ContextCompat.getColor(context!!, R.color.contempt),
-            ContextCompat.getColor(context!!, R.color.disgust),
-            ContextCompat.getColor(context!!, R.color.fear),
-            ContextCompat.getColor(context!!, R.color.happy),
-            ContextCompat.getColor(context!!, R.color.sadness),
-            ContextCompat.getColor(context!!, R.color.surprise))
-        val dataColors = ArrayList<Int>()
-        val entries = ArrayList<PieEntry>()
-        for (i in 0..6) {
-            // TODO: insert data here!
-            val value = (i+1).toFloat()
-            if (value > 0) {
-                entries.add(PieEntry(value, "emote"))
-                dataColors.add(allColors[i])
-            }
-        }
-        val pieDataset = PieDataSet(entries, "Emotions")
-        pieChart.data = PieData(pieDataset)
-        pieChart.legend.isEnabled = false
-        pieDataset.sliceSpace = 2f
-        pieDataset.valueTextSize = 15f
-        pieDataset.valueTextColor = R.color.darkGrey
-        pieDataset.valueFormatter = PercentFormatter()
-        pieDataset.colors = dataColors
-        pieChart.description.isEnabled = false
-        pieChart.setUsePercentValues(true)
+
+        profileViewModel.getUsersMarkers((activity as MapsActivity).getUserId(),
+            object : MarkerDataSource.StatLoadCallback {
+                override fun onLoad(stat: List<EmotionStat>) {
+                    val dataColors = ArrayList<Int>()
+                    val entries = ArrayList<PieEntry>()
+                    val pieChart = view.findViewById<PieChart>(R.id.pieChart)
+
+                    stat.forEach {
+                        if (it.count > 0) {
+                            entries.add(PieEntry(it.count.toFloat(), getString(it.emotion.titleId)))
+                            dataColors.add(ContextCompat.getColor(context as Context,
+                                it.emotion.colorId))
+
+                        }
+                    }
+                    if (entries.count() > 0) {
+                        val pieDataset = PieDataSet(entries, "Emotions")
+                        pieChart.data = PieData(pieDataset)
+                        pieDataset.sliceSpace = 2.0f
+                        pieDataset.valueTextSize = 15.0f
+                        pieDataset.valueTextColor = R.color.darkGrey
+                        pieDataset.valueFormatter = PercentFormatter()
+                        pieDataset.colors = dataColors
+                    }
+
+                    pieChart.legend.isEnabled = false
+                    pieChart.description.isEnabled = false
+                    pieChart.setUsePercentValues(true)
+                    val paint = pieChart.getPaint(Chart.PAINT_INFO)
+                    paint.textSize = 50.0f
+                    paint.color = ContextCompat.getColor(context as Context, R.color.darkGrey)
+                    pieChart.setNoDataText("You have not set emotions yet")
+                    pieChart.invalidate()
+                }
+
+                override fun onError(t: Throwable) {
+                    Log.e("StatLoadCallback", null, t)
+                }
+            })
     }
 }

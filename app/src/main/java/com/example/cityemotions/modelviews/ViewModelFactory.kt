@@ -53,6 +53,13 @@ class ViewModelFactory(private val context: Context): ViewModelProvider.Factory 
                     Injector.provideUseCaseHandler()
                 ) as T
             }
+            ProfileViewModel::class.java -> {
+                @Suppress("UNCHECKED_CAST")
+                return ProfileViewModel(
+                    Injector.provideGetUserStat(),
+                    Injector.provideUseCaseHandler()
+                ) as T
+            }
             else -> throw IllegalArgumentException("Unknown class $modelClass")
         }
     }

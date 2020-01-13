@@ -32,4 +32,6 @@ object Injector {
         provideSQLiteDataSource(context))
 
     fun provideGetUsersMarker(): GetUsersMarkers = GetUsersMarkers(provideMarkerDataSource())
+
+    fun provideGetUserStat(): GetUserStat = GetUserStat(provideMarkerDataSource())
 }

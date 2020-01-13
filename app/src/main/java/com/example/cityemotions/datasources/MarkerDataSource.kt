@@ -1,6 +1,7 @@
 package com.example.cityemotions.datasources
 
 import com.example.cityemotions.datamodels.Emotion
+import com.example.cityemotions.datamodels.EmotionStat
 import com.example.cityemotions.datamodels.MarkerModel
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.gson.Gson
@@ -63,13 +64,14 @@ class MarkerDataSource {
             return instance!!
         }
 
-        private val URL = "http://79.143.31.234:80"
+        private const val URL = "http://79.143.31.234:80"
         private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
 
-        private val ADD_PATH = "/add_marker"
-        private val GET_ALL_PATH = "/all_markers_from_coords"
-        private val GET_USERS_MARKERS = "/users_markers"
-        private val REMOVE_PATH = "/remove_marker"
+        private const val ADD_PATH = "/add_marker"
+        private const val GET_ALL_PATH = "/all_markers_from_coords"
+        private const val GET_USERS_MARKERS = "/users_markers"
+        private const val REMOVE_PATH = "/remove_marker"
+        private const val GET_USER_STAT = "/user_stat"
     }
 
     /**
@@ -265,6 +267,41 @@ class MarkerDataSource {
         })
     }
 
+    fun getUserStat(userId: String, callback: StatLoadCallback) {
+        val userIdRequest = UserIdRequest(
+            userId = userId
+        )
+
+        val body = Gson().toJson(userIdRequest)
+        val request = makeRequest(GET_USER_STAT, body)
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code != 200) {
+                    callback.onError(Throwable("Internal Server Error"))
+                } else {
+                    response.body?.let {
+                        val stats = mutableListOf<EmotionStat>()
+                        val stringBody = it.string()
+                        val jsonArray = JSONArray(stringBody)
+                        for (i in 0 until jsonArray.length()) {
+                            val statJson = jsonArray.getJSONObject(i)
+                            stats.add(EmotionStat(
+                                emotion = Emotion.values()[statJson.getInt("emotionId")],
+                                count = statJson.getInt("emotionCnt")
+                            ))
+                        }
+
+                        callback.onLoad(stats)
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e)
+            }
+        })
+    }
+
     interface LoadCallback {
         fun onLoad(markers: List<MarkerModel>)
         fun onError(t: Throwable)
@@ -277,6 +314,11 @@ class MarkerDataSource {
 
     interface RemoveCallback {
         fun onRemove()
+        fun onError(t: Throwable)
+    }
+
+    interface StatLoadCallback {
+        fun onLoad(stat: List<EmotionStat>)
         fun onError(t: Throwable)
     }
 }
