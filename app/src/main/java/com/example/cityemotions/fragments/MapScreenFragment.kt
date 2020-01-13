@@ -15,9 +15,11 @@ import android.view.*
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.*
 import com.example.cityemotions.R
+import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
 import com.example.cityemotions.datasources.MarkerDataSource
 import com.example.cityemotions.modelviews.MapScreenViewModel
@@ -33,6 +35,7 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 import com.google.maps.android.clustering.Cluster
 import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
+import com.google.maps.android.ui.IconGenerator
 import java.io.IOException
 
 
@@ -476,6 +479,35 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
             markerOptions?.title(context.getString(item.emotion.titleId))
                 ?.icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
                 ?.snippet(null)
+        }
+    }
+
+    override fun onBeforeClusterRendered(
+        cluster: Cluster<MarkerModel>?,
+        markerOptions: MarkerOptions?
+    ) {
+        super.onBeforeClusterRendered(cluster, markerOptions)
+        val emotionsStat = HashMap<Emotion, Int>()
+        cluster?.let {
+            cluster.items.forEach {
+                val count = emotionsStat[it.emotion]
+                if (count == null) {
+                    emotionsStat[it.emotion] = 1
+                } else {
+                    emotionsStat[it.emotion] = count + 1
+                }
+            }
+
+            val entry = emotionsStat.maxBy { it.value }
+            entry?.let {
+                val bitmap = BitmapFactory.decodeResource(context.resources, entry.key.resId)
+                val emotionsCount = emotionsStat.map { it.value }.sum()
+                val markerSize = getBucket(cluster) + MapScreenFragment.markerSize
+                val resizedBitmap = Bitmap.createScaledBitmap(bitmap,
+                    markerSize, markerSize, false)
+                markerOptions?.icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap))
+                    ?.title("Total emotions: $emotionsCount")
+            }
         }
     }
 
