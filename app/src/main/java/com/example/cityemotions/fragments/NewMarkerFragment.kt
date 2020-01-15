@@ -29,6 +29,7 @@ class NewMarkerFragment: Fragment(), View.OnClickListener {
     companion object {
         const val SAVED_LONGTITUDE: String = "saved.longtitude"
         const val SAVED_LATITUDE: String = "saved.latitude"
+        const val TAG = "NewMarker"
 
         fun createFragment(latLng: LatLng): NewMarkerFragment {
             val fragment = NewMarkerFragment()
@@ -124,7 +125,7 @@ class NewMarkerFragment: Fragment(), View.OnClickListener {
                 override fun onError(t: Throwable) {
                     activity?.runOnUiThread {
                         view?.setOnClickListener(ref)
-                        Log.e("APICALL", null, t)
+                        Log.e(TAG, null, t)
                         Toast.makeText(activity, "Something went wrong...", Toast.LENGTH_LONG)
                             .show()
                     }

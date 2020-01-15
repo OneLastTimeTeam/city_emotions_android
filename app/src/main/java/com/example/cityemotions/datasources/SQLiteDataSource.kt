@@ -9,6 +9,9 @@ import com.example.cityemotions.datamodels.Emotion
 import com.example.cityemotions.datamodels.MarkerModel
 
 
+/**
+ *  Internal datasource implementation
+ */
 class SQLiteDataSource(context: Context):
     SQLiteOpenHelper(context, DATABASE_NAME + (context as MapsActivity).getUserId(),
         null, DATABASE_VERSION) {
@@ -47,6 +50,11 @@ class SQLiteDataSource(context: Context):
         onCreate(db)
     }
 
+    /**
+     * Add marker in SQLiteStorage
+     *
+     * @param marker marker object from viewmodel
+     */
     fun addMarker(marker: MarkerModel) {
         val db = this.writableDatabase
         val content = ContentValues()
@@ -59,6 +67,11 @@ class SQLiteDataSource(context: Context):
         db.insert(EMOTIONS_TABLE_NAME, null, content)
     }
 
+    /**
+     * Get all markers from SQLiteStorage
+     *
+     * @return List of users markers from database
+     */
     fun getMarkers(): MutableList<MarkerModel> {
         val db = this.readableDatabase
         val projection = arrayOf(
@@ -104,6 +117,11 @@ class SQLiteDataSource(context: Context):
         return markers
     }
 
+    /**
+     * Remove marker from SQLiteStorage
+     *
+     * @param marker marker object from viewmodel
+     */
     fun removeMarker(marker: MarkerModel) {
         val db = this.writableDatabase
         db.delete(EMOTIONS_TABLE_NAME,

@@ -28,6 +28,9 @@ import kotlin.collections.ArrayList
  * User`s profile fragment
  */
 class ProfileFragment : Fragment() {
+    companion object {
+        const val TAG = "Profile"
+    }
 
     private lateinit var profileViewModel: ProfileViewModel
 
@@ -95,7 +98,7 @@ class ProfileFragment : Fragment() {
                 }
 
                 override fun onError(t: Throwable) {
-                    Log.e("StatLoadCallback", null, t)
+                    Log.e(TAG, null, t)
                 }
             })
     }

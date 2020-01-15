@@ -15,7 +15,6 @@ import android.view.*
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.cityemotions.*
 import com.example.cityemotions.R
@@ -35,7 +34,6 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 import com.google.maps.android.clustering.Cluster
 import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
-import com.google.maps.android.ui.IconGenerator
 import java.io.IOException
 
 
@@ -51,6 +49,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
         private const val REQUEST_CHECK_SETTINGS = 2
 
         const val markerSize = 96
+        const val TAG = "MapScreen"
     }
 
     /** GoogleMap object */
@@ -170,7 +169,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
     /** Setup cluster manager and add listeners */
     private fun setupClusterManager() {
         clusterManager = ClusterManager(context, map)
-        clusterManager.renderer = MarkerClasterRenderer(context as Context, map, clusterManager)
+        clusterManager.renderer = MarkerClusterRenderer(context as Context, map, clusterManager)
         cameraIdleListener.addListener(clusterManager)
         markerClickListener.addListener(clusterManager)
     }
@@ -197,13 +196,13 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0f))
             }
         } catch (geocodeEx: IOException) {
-            Log.e("Geocoding exception", geocodeEx.toString())
+            Log.e(TAG, geocodeEx.toString())
         }
     }
 
     override fun onError(status: Status) {
         status.statusMessage?.let {
-            Log.e("PlaceSelection", it)
+            Log.e(TAG, it)
         }
     }
 
@@ -338,7 +337,7 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
                     e.startResolutionForResult(activity as Activity,
                         REQUEST_CHECK_SETTINGS)
                 } catch (sendEx: IntentSender.SendIntentException) {
-                    Log.e("LocationApi", sendEx.toString())
+                    Log.e(TAG, sendEx.toString())
                 }
             }
         }
@@ -412,13 +411,16 @@ class MapScreenFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClic
             }
 
             override fun onError(t: Throwable) {
-                Log.e("LoadCallback", null, t)
+                Log.e(TAG, null, t)
             }
         })
     }
 }
 
 
+/**
+ * Custom composite camera idle listener implementation with many listeners
+ */
 class CompositeOnCameraIdleListener: GoogleMap.OnCameraIdleListener {
     private var mListeners = mutableListOf<GoogleMap.OnCameraIdleListener>()
 
@@ -434,6 +436,9 @@ class CompositeOnCameraIdleListener: GoogleMap.OnCameraIdleListener {
 }
 
 
+/**
+ * Custom composite on marker click listener implementation with many listeners
+ */
 class CompositeOnMarkerClickListener: GoogleMap.OnMarkerClickListener {
     private var mListeners = mutableListOf<GoogleMap.OnMarkerClickListener>()
 
@@ -450,7 +455,10 @@ class CompositeOnMarkerClickListener: GoogleMap.OnMarkerClickListener {
 }
 
 
-class MarkerClasterRenderer(private val context: Context, private val map: GoogleMap,
+/**
+ * Custom cluster renderer. Overrides markers rendering logic
+ */
+class MarkerClusterRenderer(private val context: Context, private val map: GoogleMap,
                             private val clusterManager: ClusterManager<MarkerModel>):
     DefaultClusterRenderer<MarkerModel>(context, map, clusterManager),
     ClusterManager.OnClusterItemClickListener<MarkerModel> {
@@ -472,7 +480,7 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
     override fun onBeforeClusterItemRendered(item: MarkerModel?, markerOptions: MarkerOptions?) {
         super.onBeforeClusterItemRendered(item, markerOptions)
         item?.let {
-            val bitmap = BitmapFactory.decodeResource(context.resources, item.emotion.resId)
+            val bitmap = BitmapFactory.decodeResource(context.resources, it.emotion.resId)
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap,
                 MapScreenFragment.markerSize,
                 MapScreenFragment.markerSize, false)
@@ -500,7 +508,7 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
 
             val entry = emotionsStat.maxBy { it.value }
             entry?.let {
-                val bitmap = BitmapFactory.decodeResource(context.resources, entry.key.resId)
+                val bitmap = BitmapFactory.decodeResource(context.resources, it.key.resId)
                 val emotionsCount = emotionsStat.map { it.value }.sum()
                 val markerSize = getBucket(cluster) + MapScreenFragment.markerSize
                 val resizedBitmap = Bitmap.createScaledBitmap(bitmap,
@@ -514,14 +522,14 @@ class MarkerClasterRenderer(private val context: Context, private val map: Googl
     override fun onClusterItemRendered(clusterItem: MarkerModel?, marker: Marker?) {
         super.onClusterItemRendered(clusterItem, marker)
         clusterItem?.let {
-            marker?.tag = clusterItem.dbId
+            marker?.tag = it.dbId
         }
     }
 
     override fun onClusterItemClick(markerModel: MarkerModel?): Boolean {
         markerModel?.let {
             for (marker in clusterManager.markerCollection.markers) {
-                if (marker.tag == markerModel.dbId) {
+                if (marker.tag == it.dbId) {
                     marker.showInfoWindow()
                 }
             }

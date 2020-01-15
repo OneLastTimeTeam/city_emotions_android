@@ -50,7 +50,7 @@ data class UserIdRequest(
 
 
 /**
- *  DataSource implementation
+ *  External datasource implementation
  */
 class MarkerDataSource {
     companion object {
@@ -267,6 +267,12 @@ class MarkerDataSource {
         })
     }
 
+    /**
+     * Get user emotions usage statistics
+     *
+     * @param userId user identificator string
+     * @param callback user`s implementation of DataSource.StatLoadCallback interface
+     */
     fun getUserStat(userId: String, callback: StatLoadCallback) {
         val userIdRequest = UserIdRequest(
             userId = userId

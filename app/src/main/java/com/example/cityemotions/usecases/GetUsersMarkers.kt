@@ -15,6 +15,8 @@ class GetUsersMarkers(private val dataRepository: MarkerDataSource):
 
     /**
      * Return user`s markers from storage
+     *
+     * @param requestValue user id string
      */
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {

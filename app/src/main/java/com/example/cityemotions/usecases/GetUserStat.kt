@@ -9,6 +9,8 @@ class GetUserStat(private val dataRepository: MarkerDataSource):
 
     /**
      * Return user`s emotions stat from db
+     *
+     * @param requestValue user id string
      */
     override fun executeUseCase(requestValue: RequestValue?) {
         if (requestValue != null) {
